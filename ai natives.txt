@@ -1,0 +1,6 @@
+CreepsOnMap
+GetPlayerUnitTypeCount
+GetUnitBuildTime
+GetUnitGoldCost
+GetUnitWoodCost
+UnitAlive
