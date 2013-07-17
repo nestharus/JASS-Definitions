@@ -1,4 +1,14 @@
+types = native, bj, type, constant
+start = |
+
 ConvertRace
+
+	type	=	|native
+	descr	=	|converts an integer into a player race
+			|is constant
+	takes	=	|int abilityId
+	returns	=	|race
+
 ConvertAllianceType
 ConvertRacePref
 ConvertIGameState
