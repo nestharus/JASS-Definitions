@@ -865,7 +865,7 @@ SetCineFilterTexture
 SetCinematicCamera
 SetCinematicScene
 SetCreatureDensity
-SetCreatureDensity
+SetCreepCampFilterState
 SetCustomCampaignButtonVisible
 SetDayNightModels
 SetDefaultDifficulty
