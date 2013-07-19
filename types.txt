@@ -1,6 +1,14 @@
+boolean
+code
+handle
+integer
+real
+string
 ability
+agent
 aidifficulty
 alliancetype
+attacktype
 blendmode
 boolexpr
 buff
@@ -8,6 +16,7 @@ button
 camerafield
 camerasetup
 conditionfunc
+damagetype
 defeatcondition
 destructable
 dialog
@@ -28,12 +37,14 @@ gamespeed
 gamestate
 gametype
 group
-handle
+hashtable
 igamestate
+image
 item
 itempool
 itemtype
 leaderboard
+lightning
 limitop
 location
 mapcontrol
@@ -43,11 +54,13 @@ mapsetting
 mapvisibility
 multiboard
 multiboarditem
+pathingtype
 placement
 player
 playercolor
 playerevent
 playergameresult
+playerscore
 playerslotstate
 playerstate
 playerunitevent
@@ -59,6 +72,7 @@ raritycontrol
 rect
 region
 sound
+soundtype
 startlocprio
 terraindeformation
 texmapflags
@@ -69,6 +83,7 @@ trackable
 trigger
 triggeraction
 triggercondition
+ubersplat
 unit
 unitevent
 unitpool
@@ -76,6 +91,7 @@ unitstate
 unittype
 version
 volumegroup
+weapontype
 weathereffect
 widget
 widgetevent

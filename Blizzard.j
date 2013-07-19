@@ -368,12 +368,19 @@ globals
     constant integer   bj_GATEOPERATION_OPEN       = 1
     constant integer   bj_GATEOPERATION_DESTROY    = 2
 
-    // Game cache value types
-    constant integer   bj_GAMECACHE_BOOLEAN        = 0
-    constant integer   bj_GAMECACHE_INTEGER        = 1
-    constant integer   bj_GAMECACHE_REAL           = 2
-    constant integer   bj_GAMECACHE_UNIT           = 3
-    constant integer   bj_GAMECACHE_STRING         = 4
+	// Game cache value types
+	constant integer   bj_GAMECACHE_BOOLEAN                 = 0
+	constant integer   bj_GAMECACHE_INTEGER                 = 1
+	constant integer   bj_GAMECACHE_REAL                    = 2
+	constant integer   bj_GAMECACHE_UNIT                    = 3
+	constant integer   bj_GAMECACHE_STRING                  = 4
+	
+	// Hashtable value types
+	constant integer   bj_HASHTABLE_BOOLEAN                 = 0
+	constant integer   bj_HASHTABLE_INTEGER                 = 1
+	constant integer   bj_HASHTABLE_REAL                    = 2
+	constant integer   bj_HASHTABLE_STRING                  = 3
+	constant integer   bj_HASHTABLE_HANDLE                  = 4
 
     // Item status types
     constant integer   bj_ITEM_STATUS_HIDDEN       = 0
@@ -577,9 +584,9 @@ globals
     widget             bj_lastDyingWidget          = null
 
     // Random distribution vars
-	integer            bj_randDistCount            = 0
-	integer array      bj_randDistID
-	integer array      bj_randDistChance
+    integer            bj_randDistCount            = 0
+    integer array      bj_randDistID
+    integer array      bj_randDistChance
 
     // Last X'd vars
     unit               bj_lastCreatedUnit          = null
@@ -598,14 +605,19 @@ globals
     timer              bj_lastStartedTimer         = CreateTimer()
     timerdialog        bj_lastCreatedTimerDialog   = null
     leaderboard        bj_lastCreatedLeaderboard   = null
+    multiboard         bj_lastCreatedMultiboard    = null
     sound              bj_lastPlayedSound          = null
     string             bj_lastPlayedMusic          = ""
     real               bj_lastTransmissionDuration = 0
     gamecache          bj_lastCreatedGameCache     = null
+    hashtable          bj_lastCreatedHashtable     = null
     unit               bj_lastLoadedUnit           = null
     button             bj_lastCreatedButton        = null
     unit               bj_lastReplacedUnit         = null
     texttag            bj_lastCreatedTextTag       = null
+    lightning          bj_lastCreatedLightning     = null
+    image              bj_lastCreatedImage         = null
+    ubersplat          bj_lastCreatedUbersplat     = null
 
     // Filter function vars
     boolexpr           filterIssueHauntOrderAtLocBJ      = null
@@ -1149,7 +1161,6 @@ function IntegerTertiaryOp takes boolean flag, integer valueA, integer valueB re
 endfunction
 
 
-
 //***************************************************************************
 //*
 //*  General Utility Functions
@@ -1171,12 +1182,10 @@ function CommentString takes string commentString returns nothing
 endfunction
 
 //===========================================================================
-// This seemingly useless function is used to trick the trigger editor into
-// externalizing arbitrary strings.  Especially useful for storing externalized
-// string references in variables.
+// This function returns the input string, converting it from the localized text, if necessary
 //
 function StringIdentity takes string theString returns string
-    return theString
+    return GetLocalizedString(theString)
 endfunction
 
 //===========================================================================
@@ -1623,6 +1632,14 @@ endfunction
 //
 function SubStringBJ takes string source, integer start, integer end returns string
     return SubString(source, start-1, end)
+endfunction  
+  
+function GetHandleIdBJ takes handle h returns integer
+    return GetHandleId(h)
+endfunction
+
+function StringHashBJ takes string s returns integer
+    return StringHash(s)
 endfunction
 
 
@@ -1722,6 +1739,11 @@ function TriggerRegisterPlayerEventDefeat takes trigger trig, player whichPlayer
 endfunction
 
 //===========================================================================
+function TriggerRegisterPlayerEventLeave takes trigger trig, player whichPlayer returns event
+    return TriggerRegisterPlayerEvent(trig, whichPlayer, EVENT_PLAYER_LEAVE)
+endfunction
+
+//===========================================================================
 function TriggerRegisterPlayerEventAllianceChanged takes trigger trig, player whichPlayer returns event
     return TriggerRegisterPlayerEvent(trig, whichPlayer, EVENT_PLAYER_ALLIANCE_CHANGED)
 endfunction
@@ -1814,11 +1836,10 @@ function RegisterDestDeathInRegionEnum takes nothing returns nothing
 endfunction
 
 //===========================================================================
-function TriggerRegisterDestDeathInRegionEvent takes trigger trig, rect r returns event
+function TriggerRegisterDestDeathInRegionEvent takes trigger trig, rect r returns nothing
     set bj_destInRegionDiesTrig = trig
     set bj_destInRegionDiesCount = 0
     call EnumDestructablesInRect(r, null, function RegisterDestDeathInRegionEnum)
-    return trig
 endfunction
 
 
@@ -1906,8 +1927,90 @@ function GetLastCreatedTerrainDeformation takes nothing returns terraindeformati
 endfunction
 
 //===========================================================================
+function AddLightningLoc takes string codeName, location where1, location where2 returns lightning
+    set bj_lastCreatedLightning = AddLightningEx(codeName, true, GetLocationX(where1), GetLocationY(where1), GetLocationZ(where1), GetLocationX(where2), GetLocationY(where2), GetLocationZ(where2))
+    return bj_lastCreatedLightning
+endfunction
+
+//===========================================================================
+function DestroyLightningBJ takes lightning whichBolt returns boolean
+    return DestroyLightning(whichBolt)
+endfunction
+
+//===========================================================================
+function MoveLightningLoc takes lightning whichBolt, location where1, location where2 returns boolean
+    return MoveLightningEx(whichBolt, true, GetLocationX(where1), GetLocationY(where1), GetLocationZ(where1), GetLocationX(where2), GetLocationY(where2), GetLocationZ(where2))
+endfunction
+
+//===========================================================================
+function GetLightningColorABJ takes lightning whichBolt returns real
+    return GetLightningColorA(whichBolt)
+endfunction
+
+//===========================================================================
+function GetLightningColorRBJ takes lightning whichBolt returns real
+    return GetLightningColorR(whichBolt)
+endfunction
+
+//===========================================================================
+function GetLightningColorGBJ takes lightning whichBolt returns real
+    return GetLightningColorG(whichBolt)
+endfunction
+
+//===========================================================================
+function GetLightningColorBBJ takes lightning whichBolt returns real
+    return GetLightningColorB(whichBolt)
+endfunction
+
+//===========================================================================
+function SetLightningColorBJ takes lightning whichBolt, real r, real g, real b, real a returns boolean
+    return SetLightningColor(whichBolt, r, g, b, a)
+endfunction
+
+//===========================================================================
+function GetLastCreatedLightningBJ takes nothing returns lightning
+    return bj_lastCreatedLightning
+endfunction
+
+//===========================================================================
+function GetAbilityEffectBJ takes integer abilcode, effecttype t, integer index returns string
+    return GetAbilityEffectById(abilcode, t, index)
+endfunction
+
+//===========================================================================
+function GetAbilitySoundBJ takes integer abilcode, soundtype t returns string
+    return GetAbilitySoundById(abilcode, t)
+endfunction
+
+
+//===========================================================================
 function GetTerrainCliffLevelBJ takes location where returns integer
     return GetTerrainCliffLevel(GetLocationX(where), GetLocationY(where))
+endfunction
+
+//===========================================================================
+function GetTerrainTypeBJ takes location where returns integer
+    return GetTerrainType(GetLocationX(where), GetLocationY(where))
+endfunction
+
+//===========================================================================
+function GetTerrainVarianceBJ takes location where returns integer
+    return GetTerrainVariance(GetLocationX(where), GetLocationY(where))
+endfunction
+
+//===========================================================================
+function SetTerrainTypeBJ takes location where, integer terrainType, integer variation, integer area, integer shape returns nothing
+    call SetTerrainType(GetLocationX(where), GetLocationY(where), terrainType, variation, area, shape)
+endfunction
+
+//===========================================================================
+function IsTerrainPathableBJ takes location where, pathingtype t returns boolean
+    return IsTerrainPathable(GetLocationX(where), GetLocationY(where), t)
+endfunction
+
+//===========================================================================
+function SetTerrainPathableBJ takes location where, pathingtype t, boolean flag returns nothing
+    call SetTerrainPathable(GetLocationX(where), GetLocationY(where), t, flag)
 endfunction
 
 //===========================================================================
@@ -2008,6 +2111,48 @@ function AddUnitAnimationPropertiesBJ takes boolean add, string animProperties, 
     call AddUnitAnimationProperties(whichUnit, animProperties, add)
 endfunction
 
+
+//============================================================================
+function CreateImageBJ takes string file, real size, location where, real zOffset, integer imageType returns image
+    set bj_lastCreatedImage = CreateImage(file, size, size, size, GetLocationX(where), GetLocationY(where), zOffset, 0, 0, 0, imageType)
+    return bj_lastCreatedImage
+endfunction
+
+//============================================================================
+function ShowImageBJ takes boolean flag, image whichImage returns nothing
+    call ShowImage(whichImage, flag)
+endfunction
+
+//============================================================================
+function SetImagePositionBJ takes image whichImage, location where, real zOffset returns nothing
+    call SetImagePosition(whichImage, GetLocationX(where), GetLocationY(where), zOffset)
+endfunction
+
+//============================================================================
+function SetImageColorBJ takes image whichImage, real red, real green, real blue, real alpha returns nothing
+    call SetImageColor(whichImage, PercentTo255(red), PercentTo255(green), PercentTo255(blue), PercentTo255(100.0-alpha))
+endfunction
+
+//============================================================================
+function GetLastCreatedImage takes nothing returns image
+    return bj_lastCreatedImage
+endfunction
+
+//============================================================================
+function CreateUbersplatBJ takes location where, string name, real red, real green, real blue, real alpha, boolean forcePaused, boolean noBirthTime returns ubersplat
+    set bj_lastCreatedUbersplat = CreateUbersplat(GetLocationX(where), GetLocationY(where), name, PercentTo255(red), PercentTo255(green), PercentTo255(blue), PercentTo255(100.0-alpha), forcePaused, noBirthTime)
+    return bj_lastCreatedUbersplat
+endfunction
+
+//============================================================================
+function ShowUbersplatBJ takes boolean flag, ubersplat whichSplat returns nothing
+    call ShowUbersplat(whichSplat, flag)
+endfunction
+
+//============================================================================
+function GetLastCreatedUbersplat takes nothing returns ubersplat
+    return bj_lastCreatedUbersplat
+endfunction
 
 
 //***************************************************************************
@@ -2430,6 +2575,36 @@ function SetHeroLevelBJ takes unit whichHero, integer newLevel, boolean showEyeC
 endfunction
 
 //===========================================================================
+function DecUnitAbilityLevelSwapped takes integer abilcode, unit whichUnit returns integer
+    return DecUnitAbilityLevel(whichUnit, abilcode)
+endfunction
+
+//===========================================================================
+function IncUnitAbilityLevelSwapped takes integer abilcode, unit whichUnit returns integer
+    return IncUnitAbilityLevel(whichUnit, abilcode)
+endfunction
+
+//===========================================================================
+function SetUnitAbilityLevelSwapped takes integer abilcode, unit whichUnit, integer level returns integer
+    return SetUnitAbilityLevel(whichUnit, abilcode, level)
+endfunction
+
+//===========================================================================
+function GetUnitAbilityLevelSwapped takes integer abilcode, unit whichUnit returns integer
+    return GetUnitAbilityLevel(whichUnit, abilcode)
+endfunction
+
+//===========================================================================
+function UnitHasBuffBJ takes unit whichUnit, integer buffcode returns boolean
+    return (GetUnitAbilityLevel(whichUnit, buffcode) > 0)
+endfunction
+
+//===========================================================================
+function UnitRemoveBuffBJ takes integer buffcode, unit whichUnit returns boolean
+    return UnitRemoveAbility(whichUnit, buffcode)
+endfunction
+
+//===========================================================================
 function UnitAddItemSwapped takes item whichItem, unit whichHero returns boolean
     return UnitAddItem(whichHero, whichItem)
 endfunction
@@ -2569,6 +2744,26 @@ function ModifyHeroSkillPoints takes unit whichHero, integer modifyMethod, integ
 endfunction
 
 //===========================================================================
+function UnitDropItemPointBJ takes unit whichUnit, item whichItem, real x, real y returns boolean
+    return UnitDropItemPoint(whichUnit, whichItem, x, y)
+endfunction
+
+//===========================================================================
+function UnitDropItemPointLoc takes unit whichUnit, item whichItem, location loc returns boolean
+    return UnitDropItemPoint(whichUnit, whichItem, GetLocationX(loc), GetLocationY(loc))
+endfunction
+
+//===========================================================================
+function UnitDropItemSlotBJ takes unit whichUnit, item whichItem, integer slot returns boolean
+    return UnitDropItemSlot(whichUnit, whichItem, slot-1)
+endfunction
+
+//===========================================================================
+function UnitDropItemTargetBJ takes unit whichUnit, item whichItem, widget target returns boolean
+    return UnitDropItemTarget(whichUnit, whichItem, target)
+endfunction
+
+//===========================================================================
 // Two distinct trigger actions can't share the same function name, so this
 // dummy function simply mimics the behavior of an existing call.
 //
@@ -2622,6 +2817,28 @@ endfunction
 //===========================================================================
 function UnitHasItemOfTypeBJ takes unit whichUnit, integer itemId returns boolean
     return GetInventoryIndexOfItemTypeBJ(whichUnit, itemId) > 0
+endfunction
+
+//===========================================================================
+function UnitInventoryCount takes unit whichUnit returns integer
+    local integer index = 0
+    local integer count = 0
+
+    loop
+        if (UnitItemInSlot(whichUnit, index) != null) then
+            set count = count + 1
+        endif
+
+        set index = index + 1
+        exitwhen index >= bj_MAX_INVENTORY
+    endloop
+
+    return count
+endfunction
+
+//===========================================================================
+function UnitInventorySizeBJ takes unit whichUnit returns integer
+    return UnitInventorySize(whichUnit)
 endfunction
 
 //===========================================================================
@@ -3438,6 +3655,21 @@ function UnitAddAbilityBJ takes integer abilityId, unit whichUnit returns boolea
 endfunction
 
 //===========================================================================
+function UnitRemoveTypeBJ takes unittype whichType, unit whichUnit returns boolean
+    return UnitRemoveType(whichUnit, whichType)
+endfunction
+
+//===========================================================================
+function UnitAddTypeBJ takes unittype whichType, unit whichUnit returns boolean
+    return UnitAddType(whichUnit, whichType)
+endfunction
+
+//===========================================================================
+function UnitMakeAbilityPermanentBJ takes boolean permanent, integer abilityId, unit whichUnit returns boolean
+    return UnitMakeAbilityPermanent(whichUnit, permanent, abilityId)
+endfunction
+
+//===========================================================================
 function SetUnitExplodedBJ takes unit whichUnit, boolean exploded returns nothing
     call SetUnitExploded(whichUnit, exploded)
 endfunction
@@ -3606,6 +3838,16 @@ endfunction
 //===========================================================================
 function SetUnitUseFoodBJ takes boolean enable, unit whichUnit returns nothing
     call SetUnitUseFood(whichUnit, enable)
+endfunction
+
+//===========================================================================
+function UnitDamagePointLoc takes unit whichUnit, real delay, real radius, location loc, real amount, attacktype whichAttack, damagetype whichDamage returns boolean
+    return UnitDamagePoint(whichUnit, delay, radius, GetLocationX(loc), GetLocationY(loc), amount, true, false, whichAttack, whichDamage, WEAPON_TYPE_WHOKNOWS)
+endfunction
+
+//===========================================================================
+function UnitDamageTargetBJ takes unit whichUnit, unit target, real amount, attacktype whichAttack, damagetype whichDamage returns boolean
+    return UnitDamageTarget(whichUnit, target, amount, true, false, whichAttack, whichDamage, WEAPON_TYPE_WHOKNOWS)
 endfunction
 
 
@@ -4667,13 +4909,17 @@ function SetForceAllianceStateBJ takes force sourceForce, force targetForce, int
     set sourceIndex = 0
     loop
 
-        set targetIndex = 0
-        loop
-            call SetPlayerAllianceStateBJ(Player(sourceIndex), Player(targetIndex), allianceState)
+        if (sourceForce==bj_FORCE_ALL_PLAYERS or IsPlayerInForce(Player(sourceIndex), sourceForce)) then
+            set targetIndex = 0
+            loop
+                if (targetForce==bj_FORCE_ALL_PLAYERS or IsPlayerInForce(Player(targetIndex), targetForce)) then
+                    call SetPlayerAllianceStateBJ(Player(sourceIndex), Player(targetIndex), allianceState)
+                endif
 
-            set targetIndex = targetIndex + 1
-            exitwhen targetIndex == bj_MAX_PLAYER_SLOTS
-        endloop
+                set targetIndex = targetIndex + 1
+                exitwhen targetIndex == bj_MAX_PLAYER_SLOTS
+            endloop
+        endif
 
         set sourceIndex = sourceIndex + 1
         exitwhen sourceIndex == bj_MAX_PLAYER_SLOTS
@@ -4971,9 +5217,9 @@ function CustomVictoryDialogBJ takes player whichPlayer returns nothing
         if bj_isSinglePlayer then
             call PauseGame( true )
         endif
+        call EnableUserUI(false)
     endif
 
-    call EnableUserUI(false)
     call DialogDisplay( whichPlayer, d, true )
     call VolumeGroupSetVolumeForPlayerBJ( whichPlayer, SOUND_VOLUMEGROUP_UI, 1.0 )
     call StartSoundForPlayerBJ( whichPlayer, bj_victoryDialogSound )
@@ -5091,9 +5337,9 @@ function CustomDefeatDialogBJ takes player whichPlayer, string message returns n
         if bj_isSinglePlayer then
             call PauseGame( true )
         endif
+        call EnableUserUI(false)
     endif
 
-    call EnableUserUI(false)
     call DialogDisplay( whichPlayer, d, true )
     call VolumeGroupSetVolumeForPlayerBJ( whichPlayer, SOUND_VOLUMEGROUP_UI, 1.0 )
     call StartSoundForPlayerBJ( whichPlayer, bj_defeatDialogSound )
@@ -5597,9 +5843,210 @@ function GetLastCreatedLeaderboard takes nothing returns leaderboard
     return bj_lastCreatedLeaderboard
 endfunction
 
+//***************************************************************************
+//*
+//*  Multiboard Utility Functions
+//*
+//***************************************************************************
+
+//===========================================================================
+function CreateMultiboardBJ takes integer cols, integer rows, string title returns multiboard
+    set bj_lastCreatedMultiboard = CreateMultiboard()
+    call MultiboardSetRowCount(bj_lastCreatedMultiboard, rows)
+    call MultiboardSetColumnCount(bj_lastCreatedMultiboard, cols)
+    call MultiboardSetTitleText(bj_lastCreatedMultiboard, title)
+    call MultiboardDisplay(bj_lastCreatedMultiboard, true)
+    return bj_lastCreatedMultiboard
+endfunction
+
+//===========================================================================
+function DestroyMultiboardBJ takes multiboard mb returns nothing
+    call DestroyMultiboard(mb)
+endfunction
+
+//===========================================================================
+function GetLastCreatedMultiboard takes nothing returns multiboard
+    return bj_lastCreatedMultiboard
+endfunction
+
+//===========================================================================
+function MultiboardDisplayBJ takes boolean show, multiboard mb returns nothing
+    call MultiboardDisplay(mb, show)
+endfunction
+
+//===========================================================================
+function MultiboardMinimizeBJ takes boolean minimize, multiboard mb returns nothing
+    call MultiboardMinimize(mb, minimize)
+endfunction
+
+//===========================================================================
+function MultiboardSetTitleTextColorBJ takes multiboard mb, real red, real green, real blue, real transparency returns nothing
+    call MultiboardSetTitleTextColor(mb, PercentTo255(red), PercentTo255(green), PercentTo255(blue), PercentTo255(100.0-transparency))
+endfunction
+
 //===========================================================================
 function MultiboardAllowDisplayBJ takes boolean flag returns nothing
     call MultiboardSuppressDisplay(not flag)
+endfunction
+
+//===========================================================================
+function MultiboardSetItemStyleBJ takes multiboard mb, integer col, integer row, boolean showValue, boolean showIcon returns nothing
+    local integer curRow = 0
+    local integer curCol = 0
+    local integer numRows = MultiboardGetRowCount(mb)
+    local integer numCols = MultiboardGetColumnCount(mb)
+    local multiboarditem mbitem = null
+
+    // Loop over rows, using 1-based index
+    loop
+        set curRow = curRow + 1
+        exitwhen curRow > numRows
+
+        // Apply setting to the requested row, or all rows (if row is 0)
+        if (row == 0 or row == curRow) then
+            // Loop over columns, using 1-based index
+            set curCol = 0
+            loop
+                set curCol = curCol + 1
+                exitwhen curCol > numCols
+
+                // Apply setting to the requested column, or all columns (if col is 0)
+                if (col == 0 or col == curCol) then
+                    set mbitem = MultiboardGetItem(mb, curRow - 1, curCol - 1)
+                    call MultiboardSetItemStyle(mbitem, showValue, showIcon)
+                    call MultiboardReleaseItem(mbitem)
+                endif
+            endloop
+        endif
+    endloop
+endfunction
+
+//===========================================================================
+function MultiboardSetItemValueBJ takes multiboard mb, integer col, integer row, string val returns nothing
+    local integer curRow = 0
+    local integer curCol = 0
+    local integer numRows = MultiboardGetRowCount(mb)
+    local integer numCols = MultiboardGetColumnCount(mb)
+    local multiboarditem mbitem = null
+
+    // Loop over rows, using 1-based index
+    loop
+        set curRow = curRow + 1
+        exitwhen curRow > numRows
+
+        // Apply setting to the requested row, or all rows (if row is 0)
+        if (row == 0 or row == curRow) then
+            // Loop over columns, using 1-based index
+            set curCol = 0
+            loop
+                set curCol = curCol + 1
+                exitwhen curCol > numCols
+
+                // Apply setting to the requested column, or all columns (if col is 0)
+                if (col == 0 or col == curCol) then
+                    set mbitem = MultiboardGetItem(mb, curRow - 1, curCol - 1)
+                    call MultiboardSetItemValue(mbitem, val)
+                    call MultiboardReleaseItem(mbitem)
+                endif
+            endloop
+        endif
+    endloop
+endfunction
+
+//===========================================================================
+function MultiboardSetItemColorBJ takes multiboard mb, integer col, integer row, real red, real green, real blue, real transparency returns nothing
+    local integer curRow = 0
+    local integer curCol = 0
+    local integer numRows = MultiboardGetRowCount(mb)
+    local integer numCols = MultiboardGetColumnCount(mb)
+    local multiboarditem mbitem = null
+
+    // Loop over rows, using 1-based index
+    loop
+        set curRow = curRow + 1
+        exitwhen curRow > numRows
+
+        // Apply setting to the requested row, or all rows (if row is 0)
+        if (row == 0 or row == curRow) then
+            // Loop over columns, using 1-based index
+            set curCol = 0
+            loop
+                set curCol = curCol + 1
+                exitwhen curCol > numCols
+
+                // Apply setting to the requested column, or all columns (if col is 0)
+                if (col == 0 or col == curCol) then
+                    set mbitem = MultiboardGetItem(mb, curRow - 1, curCol - 1)
+                    call MultiboardSetItemValueColor(mbitem, PercentTo255(red), PercentTo255(green), PercentTo255(blue), PercentTo255(100.0-transparency))
+                    call MultiboardReleaseItem(mbitem)
+                endif
+            endloop
+        endif
+    endloop
+endfunction
+
+//===========================================================================
+function MultiboardSetItemWidthBJ takes multiboard mb, integer col, integer row, real width returns nothing
+    local integer curRow = 0
+    local integer curCol = 0
+    local integer numRows = MultiboardGetRowCount(mb)
+    local integer numCols = MultiboardGetColumnCount(mb)
+    local multiboarditem mbitem = null
+
+    // Loop over rows, using 1-based index
+    loop
+        set curRow = curRow + 1
+        exitwhen curRow > numRows
+
+        // Apply setting to the requested row, or all rows (if row is 0)
+        if (row == 0 or row == curRow) then
+            // Loop over columns, using 1-based index
+            set curCol = 0
+            loop
+                set curCol = curCol + 1
+                exitwhen curCol > numCols
+
+                // Apply setting to the requested column, or all columns (if col is 0)
+                if (col == 0 or col == curCol) then
+                    set mbitem = MultiboardGetItem(mb, curRow - 1, curCol - 1)
+                    call MultiboardSetItemWidth(mbitem, width/100.0)
+                    call MultiboardReleaseItem(mbitem)
+                endif
+            endloop
+        endif
+    endloop
+endfunction
+
+//===========================================================================
+function MultiboardSetItemIconBJ takes multiboard mb, integer col, integer row, string iconFileName returns nothing
+    local integer curRow = 0
+    local integer curCol = 0
+    local integer numRows = MultiboardGetRowCount(mb)
+    local integer numCols = MultiboardGetColumnCount(mb)
+    local multiboarditem mbitem = null
+
+    // Loop over rows, using 1-based index
+    loop
+        set curRow = curRow + 1
+        exitwhen curRow > numRows
+
+        // Apply setting to the requested row, or all rows (if row is 0)
+        if (row == 0 or row == curRow) then
+            // Loop over columns, using 1-based index
+            set curCol = 0
+            loop
+                set curCol = curCol + 1
+                exitwhen curCol > numCols
+
+                // Apply setting to the requested column, or all columns (if col is 0)
+                if (col == 0 or col == curCol) then
+                    set mbitem = MultiboardGetItem(mb, curRow - 1, curCol - 1)
+                    call MultiboardSetItemIcon(mbitem, iconFileName)
+                    call MultiboardReleaseItem(mbitem)
+                endif
+            endloop
+        endif
+    endloop
 endfunction
 
 
@@ -5632,12 +6079,61 @@ function SetTextTagColorBJ takes texttag tt, real red, real green, real blue, re
 endfunction
 
 //===========================================================================
-function CreateTextTagLocBJ takes string s, location loc, real zOffset, real size, real red, real green, real blue, real transparency returns texttag
+function SetTextTagVelocityBJ takes texttag tt, real speed, real angle returns nothing
+    local real vel = TextTagSpeed2Velocity(speed)
+    local real xvel = vel * Cos(angle * bj_DEGTORAD)
+    local real yvel = vel * Sin(angle * bj_DEGTORAD)
+
+    call SetTextTagVelocity(tt, xvel, yvel)
+endfunction
+
+//===========================================================================
+function SetTextTagTextBJ takes texttag tt, string s, real size returns nothing
     local real textHeight = TextTagSize2Height(size)
 
+    call SetTextTagText(tt, s, textHeight)
+endfunction
+
+//===========================================================================
+function SetTextTagPosBJ takes texttag tt, location loc, real zOffset returns nothing
+    call SetTextTagPos(tt, GetLocationX(loc), GetLocationY(loc), zOffset)
+endfunction
+
+//===========================================================================
+function SetTextTagPosUnitBJ takes texttag tt, unit whichUnit, real zOffset returns nothing
+    call SetTextTagPosUnit(tt, whichUnit, zOffset)
+endfunction
+
+//===========================================================================
+function SetTextTagSuspendedBJ takes texttag tt, boolean flag returns nothing
+    call SetTextTagSuspended(tt, flag)
+endfunction
+
+//===========================================================================
+function SetTextTagPermanentBJ takes texttag tt, boolean flag returns nothing
+    call SetTextTagPermanent(tt, flag)
+endfunction
+
+//===========================================================================
+function SetTextTagAgeBJ takes texttag tt, real age returns nothing
+    call SetTextTagAge(tt, age)
+endfunction
+
+//===========================================================================
+function SetTextTagLifespanBJ takes texttag tt, real lifespan returns nothing
+    call SetTextTagLifespan(tt, lifespan)
+endfunction
+
+//===========================================================================
+function SetTextTagFadepointBJ takes texttag tt, real fadepoint returns nothing
+    call SetTextTagFadepoint(tt, fadepoint)
+endfunction
+
+//===========================================================================
+function CreateTextTagLocBJ takes string s, location loc, real zOffset, real size, real red, real green, real blue, real transparency returns texttag
     set bj_lastCreatedTextTag = CreateTextTag()
-    call SetTextTagText(bj_lastCreatedTextTag, s, textHeight)
-    call SetTextTagPos(bj_lastCreatedTextTag, GetLocationX(loc), GetLocationY(loc), zOffset)
+    call SetTextTagTextBJ(bj_lastCreatedTextTag, s, size)
+    call SetTextTagPosBJ(bj_lastCreatedTextTag, loc, zOffset)
     call SetTextTagColorBJ(bj_lastCreatedTextTag, red, green, blue, transparency)
 
     return bj_lastCreatedTextTag
@@ -5645,11 +6141,9 @@ endfunction
 
 //===========================================================================
 function CreateTextTagUnitBJ takes string s, unit whichUnit, real zOffset, real size, real red, real green, real blue, real transparency returns texttag
-    local real textHeight = TextTagSize2Height(size)
-
     set bj_lastCreatedTextTag = CreateTextTag()
-    call SetTextTagText(bj_lastCreatedTextTag, s, textHeight)
-    call SetTextTagPosUnit(bj_lastCreatedTextTag, whichUnit, zOffset)
+    call SetTextTagTextBJ(bj_lastCreatedTextTag, s, size)
+    call SetTextTagPosUnitBJ(bj_lastCreatedTextTag, whichUnit, zOffset)
     call SetTextTagColorBJ(bj_lastCreatedTextTag, red, green, blue, transparency)
 
     return bj_lastCreatedTextTag
@@ -5658,15 +6152,6 @@ endfunction
 //===========================================================================
 function DestroyTextTagBJ takes texttag tt returns nothing
     call DestroyTextTag(tt)
-endfunction
-
-//===========================================================================
-function SetTextTagVelocityBJ takes texttag tt, real speed, real angle returns nothing
-    local real vel = TextTagSpeed2Velocity(speed)
-    local real xvel = vel * Cos(angle * bj_DEGTORAD)
-    local real yvel = vel * Sin(angle * bj_DEGTORAD)
-
-    call SetTextTagVelocity(tt, xvel, yvel)
 endfunction
 
 //===========================================================================
@@ -6465,6 +6950,17 @@ function GetLastCreatedGameCacheBJ takes nothing returns gamecache
 endfunction
 
 //===========================================================================
+function InitHashtableBJ takes nothing returns hashtable
+    set bj_lastCreatedHashtable = InitHashtable()
+    return bj_lastCreatedHashtable
+endfunction
+
+//===========================================================================
+function GetLastCreatedHashtableBJ takes nothing returns hashtable
+    return bj_lastCreatedHashtable
+endfunction
+
+//===========================================================================
 function StoreRealBJ takes real value, string key, string missionKey, gamecache cache returns nothing
     call StoreReal(cache, missionKey, key, value)
 endfunction
@@ -6487,6 +6983,221 @@ endfunction
 //===========================================================================
 function StoreUnitBJ takes unit whichUnit, string key, string missionKey, gamecache cache returns boolean
     return StoreUnit(cache, missionKey, key, whichUnit)
+endfunction
+
+//===========================================================================
+function SaveRealBJ takes real value, integer key, integer missionKey, hashtable table returns nothing
+    call SaveReal(table, missionKey, key, value)
+endfunction
+
+//===========================================================================
+function SaveIntegerBJ takes integer value, integer key, integer missionKey, hashtable table returns nothing
+    call SaveInteger(table, missionKey, key, value)
+endfunction
+
+//===========================================================================
+function SaveBooleanBJ takes boolean value, integer key, integer missionKey, hashtable table returns nothing
+    call SaveBoolean(table, missionKey, key, value)
+endfunction
+
+//===========================================================================
+function SaveStringBJ takes string value, integer key, integer missionKey, hashtable table returns boolean
+    return SaveStr(table, missionKey, key, value)
+endfunction
+
+//===========================================================================
+function SavePlayerHandleBJ takes player whichPlayer, integer key, integer missionKey, hashtable table returns boolean
+    return SavePlayerHandle(table, missionKey, key, whichPlayer)
+endfunction
+
+//===========================================================================
+function SaveWidgetHandleBJ takes widget whichWidget, integer key, integer missionKey, hashtable table returns boolean
+    return SaveWidgetHandle(table, missionKey, key, whichWidget)
+endfunction
+
+//===========================================================================
+function SaveDestructableHandleBJ takes destructable whichDestructable, integer key, integer missionKey, hashtable table returns boolean
+    return SaveDestructableHandle(table, missionKey, key, whichDestructable)
+endfunction
+
+//===========================================================================
+function SaveItemHandleBJ takes item whichItem, integer key, integer missionKey, hashtable table returns boolean
+    return SaveItemHandle(table, missionKey, key, whichItem)
+endfunction
+
+//===========================================================================
+function SaveUnitHandleBJ takes unit whichUnit, integer key, integer missionKey, hashtable table returns boolean
+    return SaveUnitHandle(table, missionKey, key, whichUnit)
+endfunction
+
+//===========================================================================
+function SaveAbilityHandleBJ takes ability whichAbility, integer key, integer missionKey, hashtable table returns boolean
+    return SaveAbilityHandle(table, missionKey, key, whichAbility)
+endfunction
+
+//===========================================================================
+function SaveTimerHandleBJ takes timer whichTimer, integer key, integer missionKey, hashtable table returns boolean
+    return SaveTimerHandle(table, missionKey, key, whichTimer)
+endfunction
+
+//===========================================================================
+function SaveTriggerHandleBJ takes trigger whichTrigger, integer key, integer missionKey, hashtable table returns boolean
+    return SaveTriggerHandle(table, missionKey, key, whichTrigger)
+endfunction
+
+//===========================================================================
+function SaveTriggerConditionHandleBJ takes triggercondition whichTriggercondition, integer key, integer missionKey, hashtable table returns boolean
+    return SaveTriggerConditionHandle(table, missionKey, key, whichTriggercondition)
+endfunction
+
+//===========================================================================
+function SaveTriggerActionHandleBJ takes triggeraction whichTriggeraction, integer key, integer missionKey, hashtable table returns boolean
+    return SaveTriggerActionHandle(table, missionKey, key, whichTriggeraction)
+endfunction
+
+//===========================================================================
+function SaveTriggerEventHandleBJ takes event whichEvent, integer key, integer missionKey, hashtable table returns boolean
+    return SaveTriggerEventHandle(table, missionKey, key, whichEvent)
+endfunction
+
+//===========================================================================
+function SaveForceHandleBJ takes force whichForce, integer key, integer missionKey, hashtable table returns boolean
+    return SaveForceHandle(table, missionKey, key, whichForce)
+endfunction
+
+//===========================================================================
+function SaveGroupHandleBJ takes group whichGroup, integer key, integer missionKey, hashtable table returns boolean
+    return SaveGroupHandle(table, missionKey, key, whichGroup)
+endfunction
+
+//===========================================================================
+function SaveLocationHandleBJ takes location whichLocation, integer key, integer missionKey, hashtable table returns boolean
+    return SaveLocationHandle(table, missionKey, key, whichLocation)
+endfunction
+
+//===========================================================================
+function SaveRectHandleBJ takes rect whichRect, integer key, integer missionKey, hashtable table returns boolean
+    return SaveRectHandle(table, missionKey, key, whichRect)
+endfunction
+
+//===========================================================================
+function SaveBooleanExprHandleBJ takes boolexpr whichBoolexpr, integer key, integer missionKey, hashtable table returns boolean
+    return SaveBooleanExprHandle(table, missionKey, key, whichBoolexpr)
+endfunction
+
+//===========================================================================
+function SaveSoundHandleBJ takes sound whichSound, integer key, integer missionKey, hashtable table returns boolean
+    return SaveSoundHandle(table, missionKey, key, whichSound)
+endfunction
+
+//===========================================================================
+function SaveEffectHandleBJ takes effect whichEffect, integer key, integer missionKey, hashtable table returns boolean
+    return SaveEffectHandle(table, missionKey, key, whichEffect)
+endfunction
+
+//===========================================================================
+function SaveUnitPoolHandleBJ takes unitpool whichUnitpool, integer key, integer missionKey, hashtable table returns boolean
+    return SaveUnitPoolHandle(table, missionKey, key, whichUnitpool)
+endfunction
+
+//===========================================================================
+function SaveItemPoolHandleBJ takes itempool whichItempool, integer key, integer missionKey, hashtable table returns boolean
+    return SaveItemPoolHandle(table, missionKey, key, whichItempool)
+endfunction
+
+//===========================================================================
+function SaveQuestHandleBJ takes quest whichQuest, integer key, integer missionKey, hashtable table returns boolean
+    return SaveQuestHandle(table, missionKey, key, whichQuest)
+endfunction
+
+//===========================================================================
+function SaveQuestItemHandleBJ takes questitem whichQuestitem, integer key, integer missionKey, hashtable table returns boolean
+    return SaveQuestItemHandle(table, missionKey, key, whichQuestitem)
+endfunction
+
+//===========================================================================
+function SaveDefeatConditionHandleBJ takes defeatcondition whichDefeatcondition, integer key, integer missionKey, hashtable table returns boolean
+    return SaveDefeatConditionHandle(table, missionKey, key, whichDefeatcondition)
+endfunction
+
+//===========================================================================
+function SaveTimerDialogHandleBJ takes timerdialog whichTimerdialog, integer key, integer missionKey, hashtable table returns boolean
+    return SaveTimerDialogHandle(table, missionKey, key, whichTimerdialog)
+endfunction
+
+//===========================================================================
+function SaveLeaderboardHandleBJ takes leaderboard whichLeaderboard, integer key, integer missionKey, hashtable table returns boolean
+    return SaveLeaderboardHandle(table, missionKey, key, whichLeaderboard)
+endfunction
+
+//===========================================================================
+function SaveMultiboardHandleBJ takes multiboard whichMultiboard, integer key, integer missionKey, hashtable table returns boolean
+    return SaveMultiboardHandle(table, missionKey, key, whichMultiboard)
+endfunction
+
+//===========================================================================
+function SaveMultiboardItemHandleBJ takes multiboarditem whichMultiboarditem, integer key, integer missionKey, hashtable table returns boolean
+    return SaveMultiboardItemHandle(table, missionKey, key, whichMultiboarditem)
+endfunction
+
+//===========================================================================
+function SaveTrackableHandleBJ takes trackable whichTrackable, integer key, integer missionKey, hashtable table returns boolean
+    return SaveTrackableHandle(table, missionKey, key, whichTrackable)
+endfunction
+
+//===========================================================================
+function SaveDialogHandleBJ takes dialog whichDialog, integer key, integer missionKey, hashtable table returns boolean
+    return SaveDialogHandle(table, missionKey, key, whichDialog)
+endfunction
+
+//===========================================================================
+function SaveButtonHandleBJ takes button whichButton, integer key, integer missionKey, hashtable table returns boolean
+    return SaveButtonHandle(table, missionKey, key, whichButton)
+endfunction
+
+//===========================================================================
+function SaveTextTagHandleBJ takes texttag whichTexttag, integer key, integer missionKey, hashtable table returns boolean
+    return SaveTextTagHandle(table, missionKey, key, whichTexttag)
+endfunction
+
+//===========================================================================
+function SaveLightningHandleBJ takes lightning whichLightning, integer key, integer missionKey, hashtable table returns boolean
+    return SaveLightningHandle(table, missionKey, key, whichLightning)
+endfunction
+
+//===========================================================================
+function SaveImageHandleBJ takes image whichImage, integer key, integer missionKey, hashtable table returns boolean
+    return SaveImageHandle(table, missionKey, key, whichImage)
+endfunction
+
+//===========================================================================
+function SaveUbersplatHandleBJ takes ubersplat whichUbersplat, integer key, integer missionKey, hashtable table returns boolean
+    return SaveUbersplatHandle(table, missionKey, key, whichUbersplat)
+endfunction
+
+//===========================================================================
+function SaveRegionHandleBJ takes region whichRegion, integer key, integer missionKey, hashtable table returns boolean
+    return SaveRegionHandle(table, missionKey, key, whichRegion)
+endfunction
+
+//===========================================================================
+function SaveFogStateHandleBJ takes fogstate whichFogState, integer key, integer missionKey, hashtable table returns boolean
+    return SaveFogStateHandle(table, missionKey, key, whichFogState)
+endfunction
+
+//===========================================================================
+function SaveFogModifierHandleBJ takes fogmodifier whichFogModifier, integer key, integer missionKey, hashtable table returns boolean
+    return SaveFogModifierHandle(table, missionKey, key, whichFogModifier)
+endfunction
+
+//===========================================================================
+function SaveAgentHandleBJ takes agent whichAgent, integer key, integer missionKey, hashtable table returns boolean
+    return SaveAgentHandle(table, missionKey, key, whichAgent)
+endfunction
+
+//===========================================================================
+function SaveHashtableHandleBJ takes hashtable whichHashtable, integer key, integer missionKey, hashtable table returns boolean
+    return SaveHashtableHandle(table, missionKey, key, whichHashtable)
 endfunction
 
 //===========================================================================
@@ -6521,6 +7232,227 @@ function GetStoredStringBJ takes string key, string missionKey, gamecache cache 
 endfunction
 
 //===========================================================================
+function LoadRealBJ takes integer key, integer missionKey, hashtable table returns real
+    //call SyncStoredReal(table, missionKey, key)
+    return LoadReal(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadIntegerBJ takes integer key, integer missionKey, hashtable table returns integer
+    //call SyncStoredInteger(table, missionKey, key)
+    return LoadInteger(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadBooleanBJ takes integer key, integer missionKey, hashtable table returns boolean
+    //call SyncStoredBoolean(table, missionKey, key)
+    return LoadBoolean(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadStringBJ takes integer key, integer missionKey, hashtable table returns string
+    local string s
+
+    //call SyncStoredString(table, missionKey, key)
+    set s = LoadStr(table, missionKey, key)
+    if (s == null) then
+        return ""
+    else
+        return s
+    endif
+endfunction
+
+//===========================================================================
+function LoadPlayerHandleBJ takes integer key, integer missionKey, hashtable table returns player
+    return LoadPlayerHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadWidgetHandleBJ takes integer key, integer missionKey, hashtable table returns widget
+    return LoadWidgetHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadDestructableHandleBJ takes integer key, integer missionKey, hashtable table returns destructable
+    return LoadDestructableHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadItemHandleBJ takes integer key, integer missionKey, hashtable table returns item
+    return LoadItemHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadUnitHandleBJ takes integer key, integer missionKey, hashtable table returns unit
+    return LoadUnitHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadAbilityHandleBJ takes integer key, integer missionKey, hashtable table returns ability
+    return LoadAbilityHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadTimerHandleBJ takes integer key, integer missionKey, hashtable table returns timer
+    return LoadTimerHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadTriggerHandleBJ takes integer key, integer missionKey, hashtable table returns trigger
+    return LoadTriggerHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadTriggerConditionHandleBJ takes integer key, integer missionKey, hashtable table returns triggercondition
+    return LoadTriggerConditionHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadTriggerActionHandleBJ takes integer key, integer missionKey, hashtable table returns triggeraction
+    return LoadTriggerActionHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadTriggerEventHandleBJ takes integer key, integer missionKey, hashtable table returns event
+    return LoadTriggerEventHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadForceHandleBJ takes integer key, integer missionKey, hashtable table returns force
+    return LoadForceHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadGroupHandleBJ takes integer key, integer missionKey, hashtable table returns group
+    return LoadGroupHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadLocationHandleBJ takes integer key, integer missionKey, hashtable table returns location
+    return LoadLocationHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadRectHandleBJ takes integer key, integer missionKey, hashtable table returns rect
+    return LoadRectHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadBooleanExprHandleBJ takes integer key, integer missionKey, hashtable table returns boolexpr
+    return LoadBooleanExprHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadSoundHandleBJ takes integer key, integer missionKey, hashtable table returns sound
+    return LoadSoundHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadEffectHandleBJ takes integer key, integer missionKey, hashtable table returns effect
+    return LoadEffectHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadUnitPoolHandleBJ takes integer key, integer missionKey, hashtable table returns unitpool
+    return LoadUnitPoolHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadItemPoolHandleBJ takes integer key, integer missionKey, hashtable table returns itempool
+    return LoadItemPoolHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadQuestHandleBJ takes integer key, integer missionKey, hashtable table returns quest
+    return LoadQuestHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadQuestItemHandleBJ takes integer key, integer missionKey, hashtable table returns questitem
+    return LoadQuestItemHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadDefeatConditionHandleBJ takes integer key, integer missionKey, hashtable table returns defeatcondition
+    return LoadDefeatConditionHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadTimerDialogHandleBJ takes integer key, integer missionKey, hashtable table returns timerdialog
+    return LoadTimerDialogHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadLeaderboardHandleBJ takes integer key, integer missionKey, hashtable table returns leaderboard
+    return LoadLeaderboardHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadMultiboardHandleBJ takes integer key, integer missionKey, hashtable table returns multiboard
+    return LoadMultiboardHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadMultiboardItemHandleBJ takes integer key, integer missionKey, hashtable table returns multiboarditem
+    return LoadMultiboardItemHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadTrackableHandleBJ takes integer key, integer missionKey, hashtable table returns trackable
+    return LoadTrackableHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadDialogHandleBJ takes integer key, integer missionKey, hashtable table returns dialog
+    return LoadDialogHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadButtonHandleBJ takes integer key, integer missionKey, hashtable table returns button
+    return LoadButtonHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadTextTagHandleBJ takes integer key, integer missionKey, hashtable table returns texttag
+    return LoadTextTagHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadLightningHandleBJ takes integer key, integer missionKey, hashtable table returns lightning
+    return LoadLightningHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadImageHandleBJ takes integer key, integer missionKey, hashtable table returns image
+    return LoadImageHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadUbersplatHandleBJ takes integer key, integer missionKey, hashtable table returns ubersplat
+    return LoadUbersplatHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadRegionHandleBJ takes integer key, integer missionKey, hashtable table returns region
+    return LoadRegionHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadFogStateHandleBJ takes integer key, integer missionKey, hashtable table returns fogstate
+    return LoadFogStateHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadFogModifierHandleBJ takes integer key, integer missionKey, hashtable table returns fogmodifier
+    return LoadFogModifierHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
+function LoadHashtableHandleBJ takes integer key, integer missionKey, hashtable table returns hashtable
+    return LoadHashtableHandle(table, missionKey, key)
+endfunction
+
+//===========================================================================
 function RestoreUnitLocFacingAngleBJ takes string key, string missionKey, gamecache cache, player forWhichPlayer, location loc, real facing returns unit
     //call SyncStoredUnit(cache, missionKey, key)
     set bj_lastLoadedUnit = RestoreUnit(cache, missionKey, key, forWhichPlayer, GetLocationX(loc), GetLocationY(loc), facing)
@@ -6549,6 +7481,16 @@ function FlushStoredMissionBJ takes string missionKey, gamecache cache returns n
 endfunction
 
 //===========================================================================
+function FlushParentHashtableBJ takes hashtable table returns nothing
+    call FlushParentHashtable(table)
+endfunction
+
+//===========================================================================
+function FlushChildHashtableBJ takes integer missionKey, hashtable table returns nothing
+    call FlushChildHashtable(table, missionKey)
+endfunction
+
+//===========================================================================
 function HaveStoredValue takes string key, integer valueType, string missionKey, gamecache cache returns boolean
     if (valueType == bj_GAMECACHE_BOOLEAN) then
         return HaveStoredBoolean(cache, missionKey, key)
@@ -6560,6 +7502,24 @@ function HaveStoredValue takes string key, integer valueType, string missionKey,
         return HaveStoredUnit(cache, missionKey, key)
     elseif (valueType == bj_GAMECACHE_STRING) then
         return HaveStoredString(cache, missionKey, key)
+    else
+        // Unrecognized value type - ignore the request.
+        return false
+    endif
+endfunction
+
+//===========================================================================
+function HaveSavedValue takes integer key, integer valueType, integer missionKey, hashtable table returns boolean
+    if (valueType == bj_HASHTABLE_BOOLEAN) then
+        return HaveSavedBoolean(table, missionKey, key)
+    elseif (valueType == bj_HASHTABLE_INTEGER) then
+        return HaveSavedInteger(table, missionKey, key)
+    elseif (valueType == bj_HASHTABLE_REAL) then
+        return HaveSavedReal(table, missionKey, key)
+    elseif (valueType == bj_HASHTABLE_STRING) then
+        return HaveSavedString(table, missionKey, key)
+    elseif (valueType == bj_HASHTABLE_HANDLE) then
+        return HaveSavedHandle(table, missionKey, key)
     else
         // Unrecognized value type - ignore the request.
         return false
@@ -6644,10 +7604,17 @@ endfunction
 //===========================================================================
 function GetFadeFromSeconds takes real seconds returns integer
     if (seconds != 0) then
-        return 128 / seconds
-    else
-        return 10000
+        return 128 / R2I(seconds)
     endif
+    return 10000
+endfunction
+
+//===========================================================================
+function GetFadeFromSecondsAsReal takes real seconds returns real
+    if (seconds != 0) then
+        return 128.00 / seconds
+    endif
+    return 10000.00
 endfunction
 
 //===========================================================================
@@ -6679,6 +7646,16 @@ endfunction
 //===========================================================================
 function SetPlayerFlagBJ takes playerstate whichPlayerFlag, boolean flag, player whichPlayer returns nothing
     call SetPlayerState(whichPlayer, whichPlayerFlag, IntegerTertiaryOp(flag, 1, 0))
+endfunction
+
+//===========================================================================
+function SetPlayerTaxRateBJ takes integer rate, playerstate whichResource, player sourcePlayer, player otherPlayer returns nothing
+    call SetPlayerTaxRate(sourcePlayer, otherPlayer, whichResource, rate)
+endfunction
+
+//===========================================================================
+function GetPlayerTaxRateBJ takes playerstate whichResource, player sourcePlayer, player otherPlayer returns integer
+    return GetPlayerTaxRate(sourcePlayer, otherPlayer, whichResource)
 endfunction
 
 //===========================================================================
@@ -6749,6 +7726,11 @@ function GetLastHauntedGoldMine takes nothing returns unit
 endfunction
 
 //===========================================================================
+function IsPointBlightedBJ takes location where returns boolean
+    return IsPointBlighted(GetLocationX(where), GetLocationY(where))
+endfunction
+
+//===========================================================================
 function SetPlayerColorBJEnum takes nothing returns nothing
     call SetUnitColor(GetEnumUnit(), bj_setPlayerTargetColor)
 endfunction
@@ -6804,6 +7786,10 @@ function IssueTargetDestructableOrder takes unit whichUnit, string order, widget
     return IssueTargetOrder( whichUnit, order, targetWidget )
 endfunction
 
+function IssueTargetItemOrder takes unit whichUnit, string order, widget targetWidget returns boolean
+    return IssueTargetOrder( whichUnit, order, targetWidget )
+endfunction
+
 //===========================================================================
 function IssueImmediateOrderBJ takes unit whichUnit, string order returns boolean
     return IssueImmediateOrder( whichUnit, order )
@@ -6832,9 +7818,30 @@ function GroupTargetDestructableOrder takes group whichGroup, string order, widg
     return GroupTargetOrder( whichGroup, order, targetWidget )
 endfunction
 
+function GroupTargetItemOrder takes group whichGroup, string order, widget targetWidget returns boolean
+    return GroupTargetOrder( whichGroup, order, targetWidget )
+endfunction
+
 //===========================================================================
 function GetDyingDestructable takes nothing returns destructable
-    return GetTriggerWidget()
+    return GetTriggerDestructable()
+endfunction
+
+//===========================================================================
+// Rally point setting
+//
+function SetUnitRallyPoint takes unit whichUnit, location targPos returns nothing
+    call IssuePointOrderLocBJ(whichUnit, "setrally", targPos)
+endfunction
+
+//===========================================================================
+function SetUnitRallyUnit takes unit whichUnit, unit targUnit returns nothing
+    call IssueTargetOrder(whichUnit, "setrally", targUnit)
+endfunction
+
+//===========================================================================
+function SetUnitRallyDestructable takes unit whichUnit, destructable targDest returns nothing
+    call IssueTargetOrder(whichUnit, "setrally", targDest)
 endfunction
 
 //===========================================================================
@@ -6856,6 +7863,10 @@ function SetBlightRadiusLocBJ takes boolean addBlight, player whichPlayer, locat
     call SetBlightLoc(whichPlayer, loc, radius, addBlight)
 endfunction
 
+//===========================================================================
+function GetAbilityName takes integer abilcode returns string
+    return GetObjectName(abilcode)
+endfunction
 
 
 //***************************************************************************
@@ -6965,6 +7976,9 @@ function MeleeStartingHeroLimit takes nothing returns nothing
         call ReducePlayerTechMaxAllowed(Player(index), 'Nngs', bj_MELEE_HERO_TYPE_LIMIT)
         call ReducePlayerTechMaxAllowed(Player(index), 'Nplh', bj_MELEE_HERO_TYPE_LIMIT)
         call ReducePlayerTechMaxAllowed(Player(index), 'Nbst', bj_MELEE_HERO_TYPE_LIMIT)
+        call ReducePlayerTechMaxAllowed(Player(index), 'Nalc', bj_MELEE_HERO_TYPE_LIMIT)
+        call ReducePlayerTechMaxAllowed(Player(index), 'Ntin', bj_MELEE_HERO_TYPE_LIMIT)
+        call ReducePlayerTechMaxAllowed(Player(index), 'Nfir', bj_MELEE_HERO_TYPE_LIMIT)
 
         set index = index + 1
         exitwhen index == bj_MAX_PLAYERS
@@ -7150,7 +8164,7 @@ endfunction
 //===========================================================================
 function MeleeRandomHeroLoc takes player p, integer id1, integer id2, integer id3, integer id4, location loc returns unit
     local unit    hero = null
-	local integer roll
+    local integer roll
     local integer pick
     local version v
 
@@ -7225,6 +8239,7 @@ function MeleeStartingUnitsHuman takes player whichPlayer, location startLoc, bo
     local location heroLoc
     local real     peonX
     local real     peonY
+    local unit     townHall = null
 
     if (doPreload) then
         call Preloader( "scripts\\HumanMelee.pld" )
@@ -7233,7 +8248,7 @@ function MeleeStartingUnitsHuman takes player whichPlayer, location startLoc, bo
     set nearestMine = MeleeFindNearestMine(startLoc, bj_MELEE_MINE_SEARCH_RADIUS)
     if (nearestMine != null) then
         // Spawn Town Hall at the start location.
-        call CreateUnitAtLoc(whichPlayer, 'htow', startLoc, bj_UNIT_FACING)
+        set townHall = CreateUnitAtLoc(whichPlayer, 'htow', startLoc, bj_UNIT_FACING)
         
         // Spawn Peasants near the mine.
         set nearMineLoc = MeleeGetProjectedLoc(GetUnitLoc(nearestMine), startLoc, 320, 0)
@@ -7249,7 +8264,7 @@ function MeleeStartingUnitsHuman takes player whichPlayer, location startLoc, bo
         set heroLoc = MeleeGetProjectedLoc(GetUnitLoc(nearestMine), startLoc, 384, 45)
     else
         // Spawn Town Hall at the start location.
-        call CreateUnitAtLoc(whichPlayer, 'htow', startLoc, bj_UNIT_FACING)
+        set townHall = CreateUnitAtLoc(whichPlayer, 'htow', startLoc, bj_UNIT_FACING)
         
         // Spawn Peasants directly south of the town hall.
         set peonX = GetLocationX(startLoc)
@@ -7262,6 +8277,11 @@ function MeleeStartingUnitsHuman takes player whichPlayer, location startLoc, bo
 
         // Set random hero spawn point to be just south of the start location.
         set heroLoc = Location(peonX, peonY - 2.00 * unitSpacing)
+    endif
+
+    if (townHall != null) then
+        call UnitAddAbilityBJ('Amic', townHall)
+        call UnitMakeAbilityPermanentBJ(true, 'Amic', townHall)
     endif
 
     if (doHeroes) then
@@ -7800,7 +8820,7 @@ endfunction
 function MeleeDoDrawEnum takes nothing returns nothing
     local player thePlayer = GetEnumPlayer()
 
-	call CachePlayerHeroData(thePlayer)
+    call CachePlayerHeroData(thePlayer)
     call RemovePlayerPreserveUnitsBJ(thePlayer, PLAYER_GAME_RESULT_TIE, false)
 endfunction
 
@@ -7813,7 +8833,7 @@ function MeleeDoVictoryEnum takes nothing returns nothing
 
     if (not bj_meleeVictoried[playerIndex]) then
         set bj_meleeVictoried[playerIndex] = true
-		call CachePlayerHeroData(thePlayer)
+        call CachePlayerHeroData(thePlayer)
         call RemovePlayerPreserveUnitsBJ(thePlayer, PLAYER_GAME_RESULT_VICTORY, false)
     endif
 endfunction
@@ -7832,8 +8852,8 @@ endfunction
 function MeleeDoDefeatEnum takes nothing returns nothing
     local player thePlayer = GetEnumPlayer()
 
-	// needs to happen before ownership change
-	call CachePlayerHeroData(thePlayer)
+    // needs to happen before ownership change
+    call CachePlayerHeroData(thePlayer)
     call MakeUnitsPassiveForTeam(thePlayer)
     call MeleeDoDefeat(thePlayer)
 endfunction
@@ -8247,7 +9267,7 @@ endfunction
 //===========================================================================
 function MeleeTriggerActionPlayerDefeated takes nothing returns nothing
     local player thePlayer = GetTriggerPlayer()
-	call CachePlayerHeroData(thePlayer)
+    call CachePlayerHeroData(thePlayer)
 
     if (MeleeGetAllyCount(thePlayer) > 0) then
         // If at least one ally is still alive and kicking, share units with
@@ -8277,7 +9297,7 @@ function MeleeTriggerActionPlayerLeft takes nothing returns nothing
         return
     endif
 
-	call CachePlayerHeroData(thePlayer)
+    call CachePlayerHeroData(thePlayer)
 
     // This is the same as defeat except the player generates the message 
     // "player left the game" as opposed to "player was defeated".
@@ -8877,8 +9897,16 @@ function InitSummonableCaps takes nothing returns nothing
     set index = 0
     loop
         // upgraded units
-        call SetPlayerTechMaxAllowed(Player(index), 'hrtt', 0)
-        call SetPlayerTechMaxAllowed(Player(index), 'otbk', 0)
+        // Note: Only do this if the corresponding upgrade is not yet researched
+        // Barrage - Siege Engines
+        if (not GetPlayerTechResearched(Player(index), 'Rhrt', true)) then
+            call SetPlayerTechMaxAllowed(Player(index), 'hrtt', 0)
+        endif
+
+        // Berserker Upgrade - Troll Berserkers
+        if (not GetPlayerTechResearched(Player(index), 'Robk', true)) then
+            call SetPlayerTechMaxAllowed(Player(index), 'otbk', 0)
+        endif
 
         // max skeletons per player
         call SetPlayerTechMaxAllowed(Player(index), 'uske', bj_MAX_SKELETONS)
@@ -9094,49 +10122,49 @@ endfunction
 //===========================================================================
 function RandomDistChoose takes nothing returns integer
     local integer sum = 0
-	local integer chance = 0
-	local integer index
-	local integer foundID = -1
-	local boolean done
+    local integer chance = 0
+    local integer index
+    local integer foundID = -1
+    local boolean done
 
-	// No items?
-	if (bj_randDistCount == 0) then
+    // No items?
+    if (bj_randDistCount == 0) then
         return -1
     endif
 
-	// Find sum of all chances
-	set index = 0
-	loop
+    // Find sum of all chances
+    set index = 0
+    loop
         set sum = sum + bj_randDistChance[index]
 
-		set index = index + 1
+        set index = index + 1
         exitwhen index == bj_randDistCount
     endloop
 
-	// Choose random number within the total range
-	set chance = GetRandomInt(1, sum)
+    // Choose random number within the total range
+    set chance = GetRandomInt(1, sum)
 
-	// Find ID which corresponds to this chance
-	set index = 0
-	set sum = 0
-	set done = false
-	loop
+    // Find ID which corresponds to this chance
+    set index = 0
+    set sum = 0
+    set done = false
+    loop
         set sum = sum + bj_randDistChance[index]
 
-		if (chance <= sum) then
+        if (chance <= sum) then
             set foundID = bj_randDistID[index]
-			set done = true
-		endif
-
-		set index = index + 1
-		if (index == bj_randDistCount) then
             set done = true
-		endif
+        endif
+
+        set index = index + 1
+        if (index == bj_randDistCount) then
+            set done = true
+        endif
 
         exitwhen done == true
     endloop
 
-	return foundID
+    return foundID
 endfunction
 
 
@@ -9155,21 +10183,21 @@ endfunction
 
 function UnitDropItem takes unit inUnit, integer inItemID returns item
     local real x
-	local real y
-	local real radius = 32
-	local real unitX
-	local real unitY
+    local real y
+    local real radius = 32
+    local real unitX
+    local real unitY
     local item droppedItem
 
-	if (inItemID == -1) then
+    if (inItemID == -1) then
         return null
     endif
 
     set unitX = GetUnitX(inUnit)
-	set unitY = GetUnitY(inUnit)
+    set unitY = GetUnitY(inUnit)
 
-	set x = GetRandomReal(unitX - radius, unitX + radius)
-	set y = GetRandomReal(unitY - radius, unitY + radius)
+    set x = GetRandomReal(unitX - radius, unitX + radius)
+    set y = GetRandomReal(unitY - radius, unitY + radius)
 
     set droppedItem = CreateItem(inItemID, x, y)
 
@@ -9182,20 +10210,20 @@ endfunction
 //===========================================================================
 function WidgetDropItem takes widget inWidget, integer inItemID returns item
     local real x
-	local real y
-	local real radius = 32
-	local real widgetX
-	local real widgetY
+    local real y
+    local real radius = 32
+    local real widgetX
+    local real widgetY
 
-	if (inItemID == -1) then
+    if (inItemID == -1) then
         return null
     endif
 
     set widgetX = GetWidgetX(inWidget)
-	set widgetY = GetWidgetY(inWidget)
+    set widgetY = GetWidgetY(inWidget)
 
-	set x = GetRandomReal(widgetX - radius, widgetX + radius)
-	set y = GetRandomReal(widgetY - radius, widgetY + radius)
+    set x = GetRandomReal(widgetX - radius, widgetX + radius)
+    set y = GetRandomReal(widgetY - radius, widgetY + radius)
 
     return CreateItem(inItemID, x, y)
 endfunction

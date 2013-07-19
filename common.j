@@ -2,25 +2,26 @@
 // Native types. All native functions take extended handle types when
 // possible to help prevent passing bad values to native functions
 //
-type event              extends     handle  // a reference to an event registration
-type player             extends     handle  // a single player reference
-type widget             extends     handle  // an interactive game object with life
+type agent			    extends     handle  // all reference counted objects
+type event              extends     agent  // a reference to an event registration
+type player             extends     agent  // a single player reference
+type widget             extends     agent  // an interactive game object with life
 type unit               extends     widget  // a single unit reference
 type destructable       extends     widget
 type item               extends     widget
-type ability            extends     handle
+type ability            extends     agent
 type buff               extends     ability
-type force              extends     handle
-type group              extends     handle
-type trigger            extends     handle
-type triggercondition   extends     handle
+type force              extends     agent
+type group              extends     agent
+type trigger            extends     agent
+type triggercondition   extends     agent
 type triggeraction      extends     handle
-type timer              extends     handle
-type location           extends     handle
-type region             extends     handle
-type rect               extends     handle
-type boolexpr           extends     handle
-type sound              extends     handle
+type timer              extends     agent
+type location           extends     agent
+type region             extends     agent
+type rect               extends     agent
+type boolexpr           extends     agent
+type sound              extends     agent
 type conditionfunc      extends     boolexpr
 type filterfunc         extends     boolexpr
 type unitpool           extends     handle
@@ -32,6 +33,7 @@ type gamestate          extends     handle
 type igamestate         extends     gamestate
 type fgamestate         extends     gamestate
 type playerstate        extends     handle
+type playerscore        extends     handle
 type playergameresult   extends     handle
 type unitstate          extends     handle
 type aidifficulty       extends     handle
@@ -64,26 +66,35 @@ type startlocprio       extends     handle
 type raritycontrol      extends     handle
 type blendmode          extends     handle
 type texmapflags        extends     handle
-type effect             extends     handle
+type effect             extends     agent
 type effecttype         extends     handle
 type weathereffect      extends     handle
 type terraindeformation extends     handle
 type fogstate           extends     handle
-type fogmodifier        extends     handle
-type dialog             extends     handle
-type button             extends     handle
-type quest              extends     handle
-type questitem          extends     handle
-type defeatcondition    extends     handle
-type timerdialog        extends     handle
-type leaderboard        extends     handle
-type multiboard         extends     handle
-type multiboarditem     extends     handle
-type trackable          extends     handle
-type gamecache          extends     handle
+type fogmodifier        extends     agent
+type dialog             extends     agent
+type button             extends     agent
+type quest              extends     agent
+type questitem          extends     agent
+type defeatcondition    extends     agent
+type timerdialog        extends     agent
+type leaderboard        extends     agent
+type multiboard         extends     agent
+type multiboarditem     extends     agent
+type trackable          extends     agent
+type gamecache          extends     agent
 type version            extends     handle
 type itemtype           extends     handle
 type texttag            extends     handle
+type attacktype         extends     handle
+type damagetype         extends     handle
+type weapontype         extends     handle
+type soundtype          extends     handle
+type lightning          extends     handle
+type pathingtype        extends     handle
+type image              extends     handle
+type ubersplat          extends     handle
+type hashtable          extends     agent
 
 constant native ConvertRace                 takes integer i returns race
 constant native ConvertAllianceType         takes integer i returns alliancetype
@@ -91,6 +102,7 @@ constant native ConvertRacePref             takes integer i returns racepreferen
 constant native ConvertIGameState           takes integer i returns igamestate
 constant native ConvertFGameState           takes integer i returns fgamestate
 constant native ConvertPlayerState          takes integer i returns playerstate
+constant native ConvertPlayerScore          takes integer i returns playerscore
 constant native ConvertPlayerGameResult     takes integer i returns playergameresult
 constant native ConvertUnitState            takes integer i returns unitstate
 constant native ConvertAIDifficulty         takes integer i returns aidifficulty
@@ -123,6 +135,12 @@ constant native ConvertFogState             takes integer i returns fogstate
 constant native ConvertEffectType           takes integer i returns effecttype
 constant native ConvertVersion              takes integer i returns version
 constant native ConvertItemType             takes integer i returns itemtype
+constant native ConvertAttackType           takes integer i returns attacktype
+constant native ConvertDamageType           takes integer i returns damagetype
+constant native ConvertWeaponType           takes integer i returns weapontype
+constant native ConvertSoundType            takes integer i returns soundtype
+constant native ConvertPathingType          takes integer i returns pathingtype
+
 constant native OrderId                     takes string  orderIdString     returns integer
 constant native OrderId2String              takes integer orderId           returns string
 constant native UnitId                      takes string  unitIdString      returns integer
@@ -132,6 +150,8 @@ constant native UnitId2String               takes integer unitId            retu
 constant native AbilityId                   takes string  abilityIdString   returns integer
 constant native AbilityId2String            takes integer abilityId         returns string
 
+// Looks up the "name" field for any object (unit, item, ability)
+constant native GetObjectName               takes integer objectId          returns string
 
 globals
 
@@ -185,6 +205,71 @@ globals
 
     constant version            VERSION_REIGN_OF_CHAOS          = ConvertVersion(0)
     constant version            VERSION_FROZEN_THRONE           = ConvertVersion(1)
+
+    constant attacktype         ATTACK_TYPE_NORMAL              = ConvertAttackType(0)
+    constant attacktype         ATTACK_TYPE_MELEE               = ConvertAttackType(1)
+    constant attacktype         ATTACK_TYPE_PIERCE              = ConvertAttackType(2)
+    constant attacktype         ATTACK_TYPE_SIEGE               = ConvertAttackType(3)
+    constant attacktype         ATTACK_TYPE_MAGIC               = ConvertAttackType(4)
+    constant attacktype         ATTACK_TYPE_CHAOS               = ConvertAttackType(5)
+    constant attacktype         ATTACK_TYPE_HERO                = ConvertAttackType(6)
+
+    constant damagetype         DAMAGE_TYPE_UNKNOWN             = ConvertDamageType(0)
+    constant damagetype         DAMAGE_TYPE_NORMAL              = ConvertDamageType(4)
+    constant damagetype         DAMAGE_TYPE_ENHANCED            = ConvertDamageType(5)
+    constant damagetype         DAMAGE_TYPE_FIRE                = ConvertDamageType(8)
+    constant damagetype         DAMAGE_TYPE_COLD                = ConvertDamageType(9)
+    constant damagetype         DAMAGE_TYPE_LIGHTNING           = ConvertDamageType(10)
+    constant damagetype         DAMAGE_TYPE_POISON              = ConvertDamageType(11)
+    constant damagetype         DAMAGE_TYPE_DISEASE             = ConvertDamageType(12)
+    constant damagetype         DAMAGE_TYPE_DIVINE              = ConvertDamageType(13)
+    constant damagetype         DAMAGE_TYPE_MAGIC               = ConvertDamageType(14)
+    constant damagetype         DAMAGE_TYPE_SONIC               = ConvertDamageType(15)
+    constant damagetype         DAMAGE_TYPE_ACID                = ConvertDamageType(16)
+    constant damagetype         DAMAGE_TYPE_FORCE               = ConvertDamageType(17)
+    constant damagetype         DAMAGE_TYPE_DEATH               = ConvertDamageType(18)
+    constant damagetype         DAMAGE_TYPE_MIND                = ConvertDamageType(19)
+    constant damagetype         DAMAGE_TYPE_PLANT               = ConvertDamageType(20)
+    constant damagetype         DAMAGE_TYPE_DEFENSIVE           = ConvertDamageType(21)
+    constant damagetype         DAMAGE_TYPE_DEMOLITION          = ConvertDamageType(22)
+    constant damagetype         DAMAGE_TYPE_SLOW_POISON         = ConvertDamageType(23)
+    constant damagetype         DAMAGE_TYPE_SPIRIT_LINK         = ConvertDamageType(24)
+    constant damagetype         DAMAGE_TYPE_SHADOW_STRIKE       = ConvertDamageType(25)
+    constant damagetype         DAMAGE_TYPE_UNIVERSAL           = ConvertDamageType(26)
+
+    constant weapontype         WEAPON_TYPE_WHOKNOWS            = ConvertWeaponType(0)
+    constant weapontype         WEAPON_TYPE_METAL_LIGHT_CHOP    = ConvertWeaponType(1)
+    constant weapontype         WEAPON_TYPE_METAL_MEDIUM_CHOP   = ConvertWeaponType(2)
+    constant weapontype         WEAPON_TYPE_METAL_HEAVY_CHOP    = ConvertWeaponType(3)
+    constant weapontype         WEAPON_TYPE_METAL_LIGHT_SLICE   = ConvertWeaponType(4)
+    constant weapontype         WEAPON_TYPE_METAL_MEDIUM_SLICE  = ConvertWeaponType(5)
+    constant weapontype         WEAPON_TYPE_METAL_HEAVY_SLICE   = ConvertWeaponType(6)
+    constant weapontype         WEAPON_TYPE_METAL_MEDIUM_BASH   = ConvertWeaponType(7)
+    constant weapontype         WEAPON_TYPE_METAL_HEAVY_BASH    = ConvertWeaponType(8)
+    constant weapontype         WEAPON_TYPE_METAL_MEDIUM_STAB   = ConvertWeaponType(9)
+    constant weapontype         WEAPON_TYPE_METAL_HEAVY_STAB    = ConvertWeaponType(10)
+    constant weapontype         WEAPON_TYPE_WOOD_LIGHT_SLICE    = ConvertWeaponType(11)
+    constant weapontype         WEAPON_TYPE_WOOD_MEDIUM_SLICE   = ConvertWeaponType(12)
+    constant weapontype         WEAPON_TYPE_WOOD_HEAVY_SLICE    = ConvertWeaponType(13)
+    constant weapontype         WEAPON_TYPE_WOOD_LIGHT_BASH     = ConvertWeaponType(14)
+    constant weapontype         WEAPON_TYPE_WOOD_MEDIUM_BASH    = ConvertWeaponType(15)
+    constant weapontype         WEAPON_TYPE_WOOD_HEAVY_BASH     = ConvertWeaponType(16)
+    constant weapontype         WEAPON_TYPE_WOOD_LIGHT_STAB     = ConvertWeaponType(17)
+    constant weapontype         WEAPON_TYPE_WOOD_MEDIUM_STAB    = ConvertWeaponType(18)
+    constant weapontype         WEAPON_TYPE_CLAW_LIGHT_SLICE    = ConvertWeaponType(19)
+    constant weapontype         WEAPON_TYPE_CLAW_MEDIUM_SLICE   = ConvertWeaponType(20)
+    constant weapontype         WEAPON_TYPE_CLAW_HEAVY_SLICE    = ConvertWeaponType(21)
+    constant weapontype         WEAPON_TYPE_AXE_MEDIUM_CHOP     = ConvertWeaponType(22)
+    constant weapontype         WEAPON_TYPE_ROCK_HEAVY_BASH     = ConvertWeaponType(23)
+
+    constant pathingtype        PATHING_TYPE_ANY                = ConvertPathingType(0)
+    constant pathingtype        PATHING_TYPE_WALKABILITY        = ConvertPathingType(1)
+    constant pathingtype        PATHING_TYPE_FLYABILITY         = ConvertPathingType(2)
+    constant pathingtype        PATHING_TYPE_BUILDABILITY       = ConvertPathingType(3)
+    constant pathingtype        PATHING_TYPE_PEONHARVESTPATHING = ConvertPathingType(4)
+    constant pathingtype        PATHING_TYPE_BLIGHTPATHING      = ConvertPathingType(5)
+    constant pathingtype        PATHING_TYPE_FLOATABILITY       = ConvertPathingType(6)
+    constant pathingtype        PATHING_TYPE_AMPHIBIOUSPATHING  = ConvertPathingType(7)
 
 //===================================================
 // Map Setup Constants    
@@ -285,7 +370,7 @@ globals
 //===================================================
 // Game, Player, and Unit States
 //
-// For use with TriggerRegister<X>StateEvent
+// For use with TriggerRegisterStateEvent
 //
 //===================================================
 
@@ -331,6 +416,33 @@ globals
     constant aidifficulty AI_DIFFICULTY_NEWBIE                  = ConvertAIDifficulty(0)
     constant aidifficulty AI_DIFFICULTY_NORMAL                  = ConvertAIDifficulty(1)
     constant aidifficulty AI_DIFFICULTY_INSANE                  = ConvertAIDifficulty(2)
+
+    // player score values
+    constant playerscore PLAYER_SCORE_UNITS_TRAINED             = ConvertPlayerScore(0)
+    constant playerscore PLAYER_SCORE_UNITS_KILLED              = ConvertPlayerScore(1)
+    constant playerscore PLAYER_SCORE_STRUCT_BUILT              = ConvertPlayerScore(2)
+    constant playerscore PLAYER_SCORE_STRUCT_RAZED              = ConvertPlayerScore(3)
+    constant playerscore PLAYER_SCORE_TECH_PERCENT              = ConvertPlayerScore(4)
+    constant playerscore PLAYER_SCORE_FOOD_MAXPROD              = ConvertPlayerScore(5)
+    constant playerscore PLAYER_SCORE_FOOD_MAXUSED              = ConvertPlayerScore(6)
+    constant playerscore PLAYER_SCORE_HEROES_KILLED             = ConvertPlayerScore(7)
+    constant playerscore PLAYER_SCORE_ITEMS_GAINED              = ConvertPlayerScore(8)
+    constant playerscore PLAYER_SCORE_MERCS_HIRED               = ConvertPlayerScore(9)
+    constant playerscore PLAYER_SCORE_GOLD_MINED_TOTAL          = ConvertPlayerScore(10)
+    constant playerscore PLAYER_SCORE_GOLD_MINED_UPKEEP         = ConvertPlayerScore(11)
+    constant playerscore PLAYER_SCORE_GOLD_LOST_UPKEEP          = ConvertPlayerScore(12)
+    constant playerscore PLAYER_SCORE_GOLD_LOST_TAX             = ConvertPlayerScore(13)
+    constant playerscore PLAYER_SCORE_GOLD_GIVEN                = ConvertPlayerScore(14)
+    constant playerscore PLAYER_SCORE_GOLD_RECEIVED             = ConvertPlayerScore(15)
+    constant playerscore PLAYER_SCORE_LUMBER_TOTAL              = ConvertPlayerScore(16)
+    constant playerscore PLAYER_SCORE_LUMBER_LOST_UPKEEP        = ConvertPlayerScore(17)
+    constant playerscore PLAYER_SCORE_LUMBER_LOST_TAX           = ConvertPlayerScore(18)
+    constant playerscore PLAYER_SCORE_LUMBER_GIVEN              = ConvertPlayerScore(19)
+    constant playerscore PLAYER_SCORE_LUMBER_RECEIVED           = ConvertPlayerScore(20)
+    constant playerscore PLAYER_SCORE_UNIT_TOTAL                = ConvertPlayerScore(21)
+    constant playerscore PLAYER_SCORE_HERO_TOTAL                = ConvertPlayerScore(22)
+    constant playerscore PLAYER_SCORE_RESOURCE_TOTAL            = ConvertPlayerScore(23)
+    constant playerscore PLAYER_SCORE_TOTAL                     = ConvertPlayerScore(24)
         
 //===================================================
 // Game, Player and Unit Events
@@ -534,6 +646,7 @@ globals
     constant playerunitevent    EVENT_PLAYER_UNIT_SPELL_EFFECT          = ConvertPlayerUnitEvent(274)
     constant playerunitevent    EVENT_PLAYER_UNIT_SPELL_FINISH          = ConvertPlayerUnitEvent(275)
     constant playerunitevent    EVENT_PLAYER_UNIT_SPELL_ENDCAST         = ConvertPlayerUnitEvent(276)
+    constant playerunitevent    EVENT_PLAYER_UNIT_PAWN_ITEM             = ConvertPlayerUnitEvent(277)
 
     //===================================================
     // For use with TriggerRegisterUnitEvent
@@ -547,6 +660,7 @@ globals
     constant unitevent          EVENT_UNIT_SPELL_EFFECT                 = ConvertUnitEvent(291)
     constant unitevent          EVENT_UNIT_SPELL_FINISH                 = ConvertUnitEvent(292)
     constant unitevent          EVENT_UNIT_SPELL_ENDCAST                = ConvertUnitEvent(293)
+    constant unitevent          EVENT_UNIT_PAWN_ITEM                    = ConvertUnitEvent(294)
 
     //===================================================
     // Limit Event API constants    
@@ -589,6 +703,14 @@ globals
     constant unittype UNIT_TYPE_SAPPER                      = ConvertUnitType(17)
     constant unittype UNIT_TYPE_TOWNHALL                    = ConvertUnitType(18)    
     constant unittype UNIT_TYPE_ANCIENT                     = ConvertUnitType(19)
+    
+    constant unittype UNIT_TYPE_TAUREN                      = ConvertUnitType(20)
+    constant unittype UNIT_TYPE_POISONED                    = ConvertUnitType(21)
+    constant unittype UNIT_TYPE_POLYMORPHED                 = ConvertUnitType(22)
+    constant unittype UNIT_TYPE_SLEEPING                    = ConvertUnitType(23)
+    constant unittype UNIT_TYPE_RESISTANT                   = ConvertUnitType(24)
+    constant unittype UNIT_TYPE_ETHEREAL                    = ConvertUnitType(25)
+    constant unittype UNIT_TYPE_MAGIC_IMMUNE                = ConvertUnitType(26)
 
 //===================================================
 // Unit Type Constants for use with ChooseRandomItemEx()
@@ -656,6 +778,12 @@ globals
     constant effecttype     EFFECT_TYPE_TARGET              = ConvertEffectType(1)
     constant effecttype     EFFECT_TYPE_CASTER              = ConvertEffectType(2)
     constant effecttype     EFFECT_TYPE_SPECIAL             = ConvertEffectType(3)
+    constant effecttype     EFFECT_TYPE_AREA_EFFECT         = ConvertEffectType(4)
+    constant effecttype     EFFECT_TYPE_MISSILE             = ConvertEffectType(5)
+    constant effecttype     EFFECT_TYPE_LIGHTNING           = ConvertEffectType(6)
+
+    constant soundtype      SOUND_TYPE_EFFECT               = ConvertSoundType(0)
+    constant soundtype      SOUND_TYPE_EFFECT_LOOPED        = ConvertSoundType(1)
 
 endglobals
 
@@ -695,7 +823,11 @@ native R2S  takes real r returns string
 native R2SW takes real r, integer width, integer precision returns string
 native S2I  takes string s returns integer
 native S2R  takes string s returns real
+native GetHandleId takes handle h returns integer
 native SubString takes string source, integer start, integer end returns string
+native StringLength takes string s returns integer
+native StringCase takes string source, boolean upper returns string
+native StringHash takes string s returns integer
 
 native GetLocalizedString takes string source returns string
 native GetLocalizedHotkey takes string source returns integer
@@ -869,7 +1001,11 @@ native Location                 takes real x, real y returns location
 native RemoveLocation           takes location whichLocation returns nothing
 native MoveLocation             takes location whichLocation, real newX, real newY returns nothing
 native GetLocationX             takes location whichLocation returns real
-native GetLocationY             takes location whichLocation returns real   
+native GetLocationY             takes location whichLocation returns real
+
+// This function is asynchronous. The values it returns are not guaranteed synchronous between each player.
+//  If you attempt to use it in a synchronous manner, it may cause a desync.
+native GetLocationZ             takes location whichLocation returns real
 
 native IsUnitInRegion               takes region whichRegion, unit whichUnit returns boolean
 native IsPointInRegion              takes region whichRegion, real x, real y returns boolean
@@ -1109,6 +1245,12 @@ constant native GetOrderTargetUnit          takes nothing returns unit
 constant native GetSpellAbilityUnit         takes nothing returns unit
 constant native GetSpellAbilityId           takes nothing returns integer
 constant native GetSpellAbility             takes nothing returns ability
+constant native GetSpellTargetLoc           takes nothing returns location
+constant native GetSpellTargetX				takes nothing returns real
+constant native GetSpellTargetY				takes nothing returns real
+constant native GetSpellTargetDestructable  takes nothing returns destructable
+constant native GetSpellTargetItem          takes nothing returns item
+constant native GetSpellTargetUnit          takes nothing returns unit
 
 native TriggerRegisterPlayerAllianceChange takes trigger whichTrigger, player whichPlayer, alliancetype whichAlliance returns event
 native TriggerRegisterPlayerStateEvent takes trigger whichTrigger, player whichPlayer, playerstate whichState, limitop opcode, real limitval returns event
@@ -1147,6 +1289,7 @@ native TriggerRegisterUnitEvent takes trigger whichTrigger, unit whichUnit, unit
 
 // EVENT_UNIT_DAMAGED
 constant native GetEventDamage takes nothing returns real
+constant native GetEventDamageSource takes nothing returns unit
 
 // EVENT_UNIT_DEATH
 // EVENT_UNIT_DECAY
@@ -1244,6 +1387,8 @@ native          SetDestructableAnimationSpeed takes destructable d, real speedFa
 native          ShowDestructable            takes destructable d, boolean flag returns nothing
 native          GetDestructableOccluderHeight takes destructable d returns real
 native          SetDestructableOccluderHeight takes destructable d, real height returns nothing
+native          GetDestructableName         takes destructable d returns string
+constant native GetTriggerDestructable takes nothing returns destructable
 
 //============================================================================
 // Item API
@@ -1273,6 +1418,11 @@ native          EnumItemsInRect     takes rect r, boolexpr filter, code actionFu
 native          GetItemLevel    takes item whichItem returns integer
 native          GetItemType     takes item whichItem returns itemtype
 native          SetItemDropID   takes item whichItem, integer unitId returns nothing
+constant native GetItemName     takes item whichItem returns string
+native          GetItemCharges  takes item whichItem returns integer
+native          SetItemCharges  takes item whichItem, integer charges returns nothing
+native          GetItemUserData takes item whichItem returns integer
+native          SetItemUserData takes item whichItem, integer data returns nothing
 
 //============================================================================
 // Unit API
@@ -1350,9 +1500,15 @@ native          UnitModifySkillPoints   takes unit whichHero, integer skillPoint
 native          AddHeroXP           takes unit whichHero, integer xpToAdd,   boolean showEyeCandy returns nothing
 native          SetHeroLevel        takes unit whichHero, integer level,  boolean showEyeCandy returns nothing
 constant native GetHeroLevel        takes unit whichHero returns integer
+constant native GetUnitLevel        takes unit whichUnit returns integer
+native          GetHeroProperName   takes unit whichHero returns string
 native          SuspendHeroXP       takes unit whichHero, boolean flag returns nothing
 native          IsSuspendedXP       takes unit whichHero returns boolean
 native          SelectHeroSkill     takes unit whichHero, integer abilcode returns nothing
+native          GetUnitAbilityLevel takes unit whichUnit, integer abilcode returns integer
+native          DecUnitAbilityLevel takes unit whichUnit, integer abilcode returns integer
+native          IncUnitAbilityLevel takes unit whichUnit, integer abilcode returns integer
+native          SetUnitAbilityLevel takes unit whichUnit, integer abilcode, integer level returns integer
 native          ReviveHero          takes unit whichHero, real x, real y, boolean doEyecandy returns boolean
 native          ReviveHeroLoc       takes unit whichHero, location loc, boolean doEyecandy returns boolean
 native          SetUnitExploded     takes unit whichUnit, boolean exploded returns nothing
@@ -1375,6 +1531,11 @@ native          UnitRemoveItem          takes unit whichUnit, item whichItem ret
 native          UnitRemoveItemFromSlot  takes unit whichUnit, integer itemSlot returns item
 native          UnitHasItem             takes unit whichUnit, item whichItem returns boolean
 native          UnitItemInSlot          takes unit whichUnit, integer itemSlot returns item
+native          UnitInventorySize       takes unit whichUnit returns integer
+
+native          UnitDropItemPoint       takes unit whichUnit, item whichItem, real x, real y returns boolean
+native          UnitDropItemSlot        takes unit whichUnit, item whichItem, integer slot returns boolean
+native          UnitDropItemTarget      takes unit whichUnit, item whichItem, widget target returns boolean
 
 native          UnitUseItem             takes unit whichUnit, item whichItem returns boolean
 native          UnitUseItemPoint        takes unit whichUnit, item whichItem, real x, real y returns boolean
@@ -1396,6 +1557,10 @@ constant native GetUnitFoodMade     takes unit whichUnit returns integer
 constant native GetFoodMade         takes integer unitId returns integer
 constant native GetFoodUsed         takes integer unitId returns integer
 native          SetUnitUseFood      takes unit whichUnit, boolean useFood returns nothing
+
+constant native GetUnitRallyPoint           takes unit whichUnit returns location
+constant native GetUnitRallyUnit            takes unit whichUnit returns unit
+constant native GetUnitRallyDestructable    takes unit whichUnit returns destructable
 
 constant native IsUnitInGroup       takes unit whichUnit, group whichGroup returns boolean
 constant native IsUnitInForce       takes unit whichUnit, force whichForce returns boolean
@@ -1425,9 +1590,12 @@ constant native IsUnitIdType        takes integer unitId, unittype whichUnitType
 
 native UnitShareVision              takes unit whichUnit, player whichPlayer, boolean share returns nothing
 native UnitSuspendDecay             takes unit whichUnit, boolean suspend returns nothing
+native UnitAddType                  takes unit whichUnit, unittype whichUnitType returns boolean
+native UnitRemoveType               takes unit whichUnit, unittype whichUnitType returns boolean
 
 native UnitAddAbility               takes unit whichUnit, integer abilityId returns boolean
 native UnitRemoveAbility            takes unit whichUnit, integer abilityId returns boolean
+native UnitMakeAbilityPermanent     takes unit whichUnit, boolean permanent, integer abilityId returns boolean
 native UnitRemoveBuffs              takes unit whichUnit, boolean removePositive, boolean removeNegative returns nothing
 native UnitRemoveBuffsEx            takes unit whichUnit, boolean removePositive, boolean removeNegative, boolean magic, boolean physical, boolean timedLife, boolean aura, boolean autoDispel returns nothing
 native UnitHasBuffsEx               takes unit whichUnit, boolean removePositive, boolean removeNegative, boolean magic, boolean physical, boolean timedLife, boolean aura, boolean autoDispel returns boolean
@@ -1446,6 +1614,10 @@ native UnitSetConstructionProgress  takes unit whichUnit, integer constructionPe
 native UnitSetUpgradeProgress       takes unit whichUnit, integer upgradePercentage returns nothing
 native UnitPauseTimedLife           takes unit whichUnit, boolean flag returns nothing
 native UnitSetUsesAltIcon           takes unit whichUnit, boolean flag returns nothing
+
+native UnitDamagePoint              takes unit whichUnit, real delay, real radius, real x, real y, real amount, boolean attack, boolean ranged, attacktype attackType, damagetype damageType, weapontype weaponType returns boolean
+native UnitDamageTarget             takes unit whichUnit, widget target, real amount, boolean attack, boolean ranged, attacktype attackType, damagetype damageType, weapontype weaponType returns boolean
+
 native IssueImmediateOrder          takes unit whichUnit, string order returns boolean
 native IssueImmediateOrderById      takes unit whichUnit, integer order returns boolean
 native IssuePointOrder              takes unit whichUnit, string order, real x, real y returns boolean
@@ -1454,6 +1626,8 @@ native IssuePointOrderById          takes unit whichUnit, integer order, real x,
 native IssuePointOrderByIdLoc       takes unit whichUnit, integer order, location whichLocation returns boolean
 native IssueTargetOrder             takes unit whichUnit, string order, widget targetWidget returns boolean
 native IssueTargetOrderById         takes unit whichUnit, integer order, widget targetWidget returns boolean
+native IssueInstantPointOrder       takes unit whichUnit, string order, real x, real y, widget instantTargetWidget returns boolean
+native IssueInstantPointOrderById   takes unit whichUnit, integer order, real x, real y, widget instantTargetWidget returns boolean
 native IssueInstantTargetOrder      takes unit whichUnit, string order, widget targetWidget, widget instantTargetWidget returns boolean
 native IssueInstantTargetOrderById  takes unit whichUnit, integer order, widget targetWidget, widget instantTargetWidget returns boolean
 native IssueBuildOrder              takes unit whichPeon, string unitToBuild, real x, real y returns boolean
@@ -1465,6 +1639,8 @@ native IssueNeutralPointOrder           takes player forWhichPlayer,unit neutral
 native IssueNeutralPointOrderById       takes player forWhichPlayer,unit neutralStructure, integer unitId, real x, real y returns boolean
 native IssueNeutralTargetOrder          takes player forWhichPlayer,unit neutralStructure, string unitToBuild, widget target returns boolean
 native IssueNeutralTargetOrderById      takes player forWhichPlayer,unit neutralStructure, integer unitId, widget target returns boolean
+
+native GetUnitCurrentOrder          takes unit whichUnit returns integer
 
 native SetResourceAmount            takes unit whichUnit, integer amount returns nothing
 native AddResourceAmount            takes unit whichUnit, integer amount returns nothing
@@ -1515,6 +1691,7 @@ constant native GetPlayerUnitCount      takes player whichPlayer, boolean includ
 constant native GetPlayerTypedUnitCount takes player whichPlayer, string unitName, boolean includeIncomplete, boolean includeUpgrades returns integer
 constant native GetPlayerStructureCount takes player whichPlayer, boolean includeIncomplete returns integer
 constant native GetPlayerState          takes player whichPlayer, playerstate whichPlayerState returns integer
+constant native GetPlayerScore          takes player whichPlayer, playerscore whichPlayerScore returns integer
 constant native GetPlayerAlliance       takes player sourcePlayer, player otherPlayer, alliancetype whichAllianceSetting returns boolean
 
 constant native GetPlayerHandicap       takes player whichPlayer returns real
@@ -1577,9 +1754,6 @@ native          SetCampaignMenuRace takes race r returns nothing
 native          SetCampaignMenuRaceEx takes integer campaignIndex returns nothing
 native          ForceCampaignSelectScreen takes nothing returns nothing
 
-// NOTE: These funcs are reserved for Blizzard maps as they
-// could be used for nefarious scripting otherwise
-//
 native          LoadGame            takes string saveFileName, boolean doScoreScreen returns nothing
 native          SaveGame            takes string saveFileName returns nothing
 native          RenameSaveDirectory takes string sourceDirName, string destDirName returns boolean
@@ -1621,14 +1795,14 @@ native DialogDisplay                takes player whichPlayer, dialog whichDialog
 //
 native  ReloadGameCachesFromDisk takes nothing returns boolean
 
-native  InitGameCache   takes string campaignFile returns gamecache
-native  SaveGameCache   takes gamecache whichCache returns boolean
+native  InitGameCache    takes string campaignFile returns gamecache
+native  SaveGameCache    takes gamecache whichCache returns boolean
 
-native  StoreInteger    takes gamecache cache, string missionKey, string key, integer value returns nothing
-native  StoreReal       takes gamecache cache, string missionKey, string key, real value returns nothing
-native  StoreBoolean    takes gamecache cache, string missionKey, string key, boolean value returns nothing
-native  StoreUnit       takes gamecache cache, string missionKey, string key, unit whichUnit returns boolean
-native  StoreString     takes gamecache cache, string missionKey, string key, string value returns boolean
+native  StoreInteger					takes gamecache cache, string missionKey, string key, integer value returns nothing
+native  StoreReal						takes gamecache cache, string missionKey, string key, real value returns nothing
+native  StoreBoolean					takes gamecache cache, string missionKey, string key, boolean value returns nothing
+native  StoreUnit						takes gamecache cache, string missionKey, string key, unit whichUnit returns boolean
+native  StoreString						takes gamecache cache, string missionKey, string key, string value returns boolean
 
 native SyncStoredInteger        takes gamecache cache, string missionKey, string key returns nothing
 native SyncStoredReal           takes gamecache cache, string missionKey, string key returns nothing
@@ -1636,26 +1810,133 @@ native SyncStoredBoolean        takes gamecache cache, string missionKey, string
 native SyncStoredUnit           takes gamecache cache, string missionKey, string key returns nothing
 native SyncStoredString         takes gamecache cache, string missionKey, string key returns nothing
 
+native  HaveStoredInteger					takes gamecache cache, string missionKey, string key returns boolean
+native  HaveStoredReal						takes gamecache cache, string missionKey, string key returns boolean
+native  HaveStoredBoolean					takes gamecache cache, string missionKey, string key returns boolean
+native  HaveStoredUnit						takes gamecache cache, string missionKey, string key returns boolean
+native  HaveStoredString					takes gamecache cache, string missionKey, string key returns boolean
+
+native  FlushGameCache						takes gamecache cache returns nothing
+native  FlushStoredMission					takes gamecache cache, string missionKey returns nothing
+native  FlushStoredInteger					takes gamecache cache, string missionKey, string key returns nothing
+native  FlushStoredReal						takes gamecache cache, string missionKey, string key returns nothing
+native  FlushStoredBoolean					takes gamecache cache, string missionKey, string key returns nothing
+native  FlushStoredUnit						takes gamecache cache, string missionKey, string key returns nothing
+native  FlushStoredString					takes gamecache cache, string missionKey, string key returns nothing
+
 // Will return 0 if the specified value's data is not found in the cache
-native  GetStoredInteger        takes gamecache cache, string missionKey, string key returns integer
-native  GetStoredReal           takes gamecache cache, string missionKey, string key returns real
-native  GetStoredBoolean        takes gamecache cache, string missionKey, string key returns boolean
-native  GetStoredString         takes gamecache cache, string missionKey, string key returns string
-native  RestoreUnit             takes gamecache cache, string missionKey, string key, player forWhichPlayer, real x, real y, real facing returns unit
+native  GetStoredInteger				takes gamecache cache, string missionKey, string key returns integer
+native  GetStoredReal					takes gamecache cache, string missionKey, string key returns real
+native  GetStoredBoolean				takes gamecache cache, string missionKey, string key returns boolean
+native  GetStoredString					takes gamecache cache, string missionKey, string key returns string
+native  RestoreUnit						takes gamecache cache, string missionKey, string key, player forWhichPlayer, real x, real y, real facing returns unit
 
-native  HaveStoredInteger        takes gamecache cache, string missionKey, string key returns boolean
-native  HaveStoredReal           takes gamecache cache, string missionKey, string key returns boolean
-native  HaveStoredBoolean        takes gamecache cache, string missionKey, string key returns boolean
-native  HaveStoredUnit           takes gamecache cache, string missionKey, string key returns boolean
-native  HaveStoredString         takes gamecache cache, string missionKey, string key returns boolean
 
-native  FlushGameCache          takes gamecache cache returns nothing
-native  FlushStoredMission      takes gamecache cache, string missionKey returns nothing
-native  FlushStoredInteger      takes gamecache cache, string missionKey, string key returns nothing
-native  FlushStoredReal         takes gamecache cache, string missionKey, string key returns nothing
-native  FlushStoredBoolean      takes gamecache cache, string missionKey, string key returns nothing
-native  FlushStoredUnit         takes gamecache cache, string missionKey, string key returns nothing
-native  FlushStoredString       takes gamecache cache, string missionKey, string key returns nothing
+native  InitHashtable    takes nothing returns hashtable
+
+native  SaveInteger						takes hashtable table, integer parentKey, integer childKey, integer value returns nothing
+native  SaveReal						takes hashtable table, integer parentKey, integer childKey, real value returns nothing
+native  SaveBoolean						takes hashtable table, integer parentKey, integer childKey, boolean value returns nothing
+native  SaveStr							takes hashtable table, integer parentKey, integer childKey, string value returns boolean
+native  SavePlayerHandle				takes hashtable table, integer parentKey, integer childKey, player whichPlayer returns boolean
+native  SaveWidgetHandle				takes hashtable table, integer parentKey, integer childKey, widget whichWidget returns boolean
+native  SaveDestructableHandle			takes hashtable table, integer parentKey, integer childKey, destructable whichDestructable returns boolean
+native  SaveItemHandle					takes hashtable table, integer parentKey, integer childKey, item whichItem returns boolean
+native  SaveUnitHandle					takes hashtable table, integer parentKey, integer childKey, unit whichUnit returns boolean
+native  SaveAbilityHandle				takes hashtable table, integer parentKey, integer childKey, ability whichAbility returns boolean
+native  SaveTimerHandle					takes hashtable table, integer parentKey, integer childKey, timer whichTimer returns boolean
+native  SaveTriggerHandle				takes hashtable table, integer parentKey, integer childKey, trigger whichTrigger returns boolean
+native  SaveTriggerConditionHandle		takes hashtable table, integer parentKey, integer childKey, triggercondition whichTriggercondition returns boolean
+native  SaveTriggerActionHandle			takes hashtable table, integer parentKey, integer childKey, triggeraction whichTriggeraction returns boolean
+native  SaveTriggerEventHandle			takes hashtable table, integer parentKey, integer childKey, event whichEvent returns boolean
+native  SaveForceHandle					takes hashtable table, integer parentKey, integer childKey, force whichForce returns boolean
+native  SaveGroupHandle					takes hashtable table, integer parentKey, integer childKey, group whichGroup returns boolean
+native  SaveLocationHandle				takes hashtable table, integer parentKey, integer childKey, location whichLocation returns boolean
+native  SaveRectHandle					takes hashtable table, integer parentKey, integer childKey, rect whichRect returns boolean
+native  SaveBooleanExprHandle			takes hashtable table, integer parentKey, integer childKey, boolexpr whichBoolexpr returns boolean
+native  SaveSoundHandle					takes hashtable table, integer parentKey, integer childKey, sound whichSound returns boolean
+native  SaveEffectHandle				takes hashtable table, integer parentKey, integer childKey, effect whichEffect returns boolean
+native  SaveUnitPoolHandle				takes hashtable table, integer parentKey, integer childKey, unitpool whichUnitpool returns boolean
+native  SaveItemPoolHandle				takes hashtable table, integer parentKey, integer childKey, itempool whichItempool returns boolean
+native  SaveQuestHandle					takes hashtable table, integer parentKey, integer childKey, quest whichQuest returns boolean
+native  SaveQuestItemHandle				takes hashtable table, integer parentKey, integer childKey, questitem whichQuestitem returns boolean
+native  SaveDefeatConditionHandle		takes hashtable table, integer parentKey, integer childKey, defeatcondition whichDefeatcondition returns boolean
+native  SaveTimerDialogHandle			takes hashtable table, integer parentKey, integer childKey, timerdialog whichTimerdialog returns boolean
+native  SaveLeaderboardHandle			takes hashtable table, integer parentKey, integer childKey, leaderboard whichLeaderboard returns boolean
+native  SaveMultiboardHandle			takes hashtable table, integer parentKey, integer childKey, multiboard whichMultiboard returns boolean
+native  SaveMultiboardItemHandle		takes hashtable table, integer parentKey, integer childKey, multiboarditem whichMultiboarditem returns boolean
+native  SaveTrackableHandle				takes hashtable table, integer parentKey, integer childKey, trackable whichTrackable returns boolean
+native  SaveDialogHandle				takes hashtable table, integer parentKey, integer childKey, dialog whichDialog returns boolean
+native  SaveButtonHandle				takes hashtable table, integer parentKey, integer childKey, button whichButton returns boolean
+native  SaveTextTagHandle				takes hashtable table, integer parentKey, integer childKey, texttag whichTexttag returns boolean
+native  SaveLightningHandle				takes hashtable table, integer parentKey, integer childKey, lightning whichLightning returns boolean
+native  SaveImageHandle					takes hashtable table, integer parentKey, integer childKey, image whichImage returns boolean
+native  SaveUbersplatHandle				takes hashtable table, integer parentKey, integer childKey, ubersplat whichUbersplat returns boolean
+native  SaveRegionHandle				takes hashtable table, integer parentKey, integer childKey, region whichRegion returns boolean
+native  SaveFogStateHandle				takes hashtable table, integer parentKey, integer childKey, fogstate whichFogState returns boolean
+native  SaveFogModifierHandle			takes hashtable table, integer parentKey, integer childKey, fogmodifier whichFogModifier returns boolean
+native  SaveAgentHandle					takes hashtable table, integer parentKey, integer childKey, agent whichAgent returns boolean
+native  SaveHashtableHandle				takes hashtable table, integer parentKey, integer childKey, hashtable whichHashtable returns boolean
+
+
+native  LoadInteger					takes hashtable table, integer parentKey, integer childKey returns integer
+native  LoadReal					takes hashtable table, integer parentKey, integer childKey returns real
+native  LoadBoolean				    takes hashtable table, integer parentKey, integer childKey returns boolean
+native  LoadStr 					takes hashtable table, integer parentKey, integer childKey returns string
+native  LoadPlayerHandle			takes hashtable table, integer parentKey, integer childKey returns player
+native  LoadWidgetHandle			takes hashtable table, integer parentKey, integer childKey returns widget
+native  LoadDestructableHandle		takes hashtable table, integer parentKey, integer childKey returns destructable
+native  LoadItemHandle				takes hashtable table, integer parentKey, integer childKey returns item
+native  LoadUnitHandle				takes hashtable table, integer parentKey, integer childKey returns unit
+native  LoadAbilityHandle			takes hashtable table, integer parentKey, integer childKey returns ability
+native  LoadTimerHandle				takes hashtable table, integer parentKey, integer childKey returns timer
+native  LoadTriggerHandle			takes hashtable table, integer parentKey, integer childKey returns trigger
+native  LoadTriggerConditionHandle	takes hashtable table, integer parentKey, integer childKey returns triggercondition
+native  LoadTriggerActionHandle		takes hashtable table, integer parentKey, integer childKey returns triggeraction
+native  LoadTriggerEventHandle		takes hashtable table, integer parentKey, integer childKey returns event
+native  LoadForceHandle				takes hashtable table, integer parentKey, integer childKey returns force
+native  LoadGroupHandle				takes hashtable table, integer parentKey, integer childKey returns group
+native  LoadLocationHandle			takes hashtable table, integer parentKey, integer childKey returns location
+native  LoadRectHandle				takes hashtable table, integer parentKey, integer childKey returns rect
+native  LoadBooleanExprHandle		takes hashtable table, integer parentKey, integer childKey returns boolexpr
+native  LoadSoundHandle				takes hashtable table, integer parentKey, integer childKey returns sound
+native  LoadEffectHandle			takes hashtable table, integer parentKey, integer childKey returns effect
+native  LoadUnitPoolHandle			takes hashtable table, integer parentKey, integer childKey returns unitpool
+native  LoadItemPoolHandle			takes hashtable table, integer parentKey, integer childKey returns itempool
+native  LoadQuestHandle				takes hashtable table, integer parentKey, integer childKey returns quest
+native  LoadQuestItemHandle			takes hashtable table, integer parentKey, integer childKey returns questitem
+native  LoadDefeatConditionHandle	takes hashtable table, integer parentKey, integer childKey returns defeatcondition
+native  LoadTimerDialogHandle		takes hashtable table, integer parentKey, integer childKey returns timerdialog
+native  LoadLeaderboardHandle		takes hashtable table, integer parentKey, integer childKey returns leaderboard
+native  LoadMultiboardHandle		takes hashtable table, integer parentKey, integer childKey returns multiboard
+native  LoadMultiboardItemHandle	takes hashtable table, integer parentKey, integer childKey returns multiboarditem
+native  LoadTrackableHandle			takes hashtable table, integer parentKey, integer childKey returns trackable
+native  LoadDialogHandle			takes hashtable table, integer parentKey, integer childKey returns dialog
+native  LoadButtonHandle			takes hashtable table, integer parentKey, integer childKey returns button
+native  LoadTextTagHandle			takes hashtable table, integer parentKey, integer childKey returns texttag
+native  LoadLightningHandle			takes hashtable table, integer parentKey, integer childKey returns lightning
+native  LoadImageHandle				takes hashtable table, integer parentKey, integer childKey returns image
+native  LoadUbersplatHandle			takes hashtable table, integer parentKey, integer childKey returns ubersplat
+native  LoadRegionHandle			takes hashtable table, integer parentKey, integer childKey returns region
+native  LoadFogStateHandle			takes hashtable table, integer parentKey, integer childKey returns fogstate
+native  LoadFogModifierHandle		takes hashtable table, integer parentKey, integer childKey returns fogmodifier
+native  LoadHashtableHandle			takes hashtable table, integer parentKey, integer childKey returns hashtable
+
+native  HaveSavedInteger					takes hashtable table, integer parentKey, integer childKey returns boolean
+native  HaveSavedReal						takes hashtable table, integer parentKey, integer childKey returns boolean
+native  HaveSavedBoolean					takes hashtable table, integer parentKey, integer childKey returns boolean
+native  HaveSavedString					    takes hashtable table, integer parentKey, integer childKey returns boolean
+native  HaveSavedHandle     				takes hashtable table, integer parentKey, integer childKey returns boolean
+
+native  RemoveSavedInteger					takes hashtable table, integer parentKey, integer childKey returns nothing
+native  RemoveSavedReal						takes hashtable table, integer parentKey, integer childKey returns nothing
+native  RemoveSavedBoolean					takes hashtable table, integer parentKey, integer childKey returns nothing
+native  RemoveSavedString					takes hashtable table, integer parentKey, integer childKey returns nothing
+native  RemoveSavedHandle					takes hashtable table, integer parentKey, integer childKey returns nothing
+
+native  FlushParentHashtable						takes hashtable table returns nothing
+native  FlushChildHashtable					takes hashtable table, integer parentKey returns nothing
+
 
 //============================================================================
 // Randomization API
@@ -1725,10 +2006,21 @@ native SetTextTagPosUnit            takes texttag t, unit whichUnit, real height
 native SetTextTagColor              takes texttag t, integer red, integer green, integer blue, integer alpha returns nothing
 native SetTextTagVelocity           takes texttag t, real xvel, real yvel returns nothing
 native SetTextTagVisibility         takes texttag t, boolean flag returns nothing
+native SetTextTagSuspended          takes texttag t, boolean flag returns nothing
+native SetTextTagPermanent          takes texttag t, boolean flag returns nothing
+native SetTextTagAge                takes texttag t, real age returns nothing
+native SetTextTagLifespan           takes texttag t, real lifespan returns nothing
+native SetTextTagFadepoint          takes texttag t, real fadepoint returns nothing
 
 native SetReservedLocalHeroButtons  takes integer reserved returns nothing
 native GetAllyColorFilterState      takes nothing returns integer
 native SetAllyColorFilterState      takes integer state returns nothing
+native GetCreepCampFilterState      takes nothing returns boolean
+native SetCreepCampFilterState      takes boolean state returns nothing
+native EnableMinimapFilterButtons   takes boolean enableAlly, boolean enableCreep returns nothing
+native EnableDragSelect             takes boolean state, boolean ui returns nothing
+native EnablePreSelect              takes boolean state, boolean ui returns nothing
+native EnableSelect                 takes boolean state, boolean ui returns nothing
 
 //============================================================================
 // Trackable API
@@ -2025,11 +2317,58 @@ native AddSpellEffectByIdLoc        takes integer abilityId, effecttype t,locati
 native AddSpellEffectTarget         takes string modelName, effecttype t, widget targetWidget, string attachPoint returns effect
 native AddSpellEffectTargetById     takes integer abilityId, effecttype t, widget targetWidget, string attachPoint returns effect
 
+native AddLightning                 takes string codeName, boolean checkVisibility, real x1, real y1, real x2, real y2 returns lightning
+native AddLightningEx               takes string codeName, boolean checkVisibility, real x1, real y1, real z1, real x2, real y2, real z2 returns lightning
+native DestroyLightning             takes lightning whichBolt returns boolean
+native MoveLightning                takes lightning whichBolt, boolean checkVisibility, real x1, real y1, real x2, real y2 returns boolean
+native MoveLightningEx              takes lightning whichBolt, boolean checkVisibility, real x1, real y1, real z1, real x2, real y2, real z2 returns boolean
+native GetLightningColorA           takes lightning whichBolt returns real
+native GetLightningColorR           takes lightning whichBolt returns real
+native GetLightningColorG           takes lightning whichBolt returns real
+native GetLightningColorB           takes lightning whichBolt returns real
+native SetLightningColor            takes lightning whichBolt, real r, real g, real b, real a returns boolean
+
+native GetAbilityEffect             takes string abilityString, effecttype t, integer index returns string
+native GetAbilityEffectById         takes integer abilityId, effecttype t, integer index returns string
+native GetAbilitySound              takes string abilityString, soundtype t returns string
+native GetAbilitySoundById          takes integer abilityId, soundtype t returns string
+
 //============================================================================
 // Terrain API
 //
 native GetTerrainCliffLevel         takes real x, real y returns integer
 native SetWaterBaseColor            takes integer red, integer green, integer blue, integer alpha returns nothing
+native SetWaterDeforms              takes boolean val returns nothing
+native GetTerrainType               takes real x, real y returns integer
+native GetTerrainVariance           takes real x, real y returns integer
+native SetTerrainType               takes real x, real y, integer terrainType, integer variation, integer area, integer shape returns nothing
+native IsTerrainPathable            takes real x, real y, pathingtype t returns boolean
+native SetTerrainPathable           takes real x, real y, pathingtype t, boolean flag returns nothing
+
+//============================================================================
+// Image API
+//
+native CreateImage                  takes string file, real sizeX, real sizeY, real sizeZ, real posX, real posY, real posZ, real originX, real originY, real originZ, integer imageType returns image
+native DestroyImage                 takes image whichImage returns nothing
+native ShowImage                    takes image whichImage, boolean flag returns nothing
+native SetImageConstantHeight       takes image whichImage, boolean flag, real height returns nothing
+native SetImagePosition             takes image whichImage, real x, real y, real z returns nothing
+native SetImageColor                takes image whichImage, integer red, integer green, integer blue, integer alpha returns nothing
+native SetImageRender               takes image whichImage, boolean flag returns nothing
+native SetImageRenderAlways         takes image whichImage, boolean flag returns nothing
+native SetImageAboveWater           takes image whichImage, boolean flag, boolean useWaterAlpha returns nothing
+native SetImageType                 takes image whichImage, integer imageType returns nothing
+
+//============================================================================
+// Ubersplat API
+//
+native CreateUbersplat              takes real x, real y, string name, integer red, integer green, integer blue, integer alpha, boolean forcePaused, boolean noBirthTime returns ubersplat
+native DestroyUbersplat             takes ubersplat whichSplat returns nothing
+native ResetUbersplat               takes ubersplat whichSplat returns nothing
+native FinishUbersplat              takes ubersplat whichSplat returns nothing
+native ShowUbersplat                takes ubersplat whichSplat, boolean flag returns nothing
+native SetUbersplatRender           takes ubersplat whichSplat, boolean flag returns nothing
+native SetUbersplatRenderAlways     takes ubersplat whichSplat, boolean flag returns nothing
 
 //============================================================================
 // Blight API
@@ -2039,6 +2378,7 @@ native SetBlightRect            takes player whichPlayer, rect r, boolean addBli
 native SetBlightPoint           takes player whichPlayer, real x, real y, boolean addBlight returns nothing
 native SetBlightLoc             takes player whichPlayer, location whichLocation, real radius, boolean addBlight returns nothing
 native CreateBlightedGoldmine   takes player id, real x, real y, real face returns unit
+native IsPointBlighted          takes real x, real y returns boolean
 
 //============================================================================
 // Doodad API
