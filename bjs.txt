@@ -215,7 +215,7 @@ GetLastCreatedTimerDialogBJ
 GetLastCreatedUbersplat
 GetLastCreatedUnit
 GetLastCreatedWeatherEffect
-GetLastHauntedGoldMine	
+GetLastHauntedGoldMine  
 GetLastPlayedMusic
 GetLastPlayedSound
 GetLastRemovedItem
